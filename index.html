@@ -36,7 +36,7 @@
   .stack{position:absolute; inset:12px 12px 0}
   .card{position:absolute; inset:0; background:var(--panel); border:1px solid var(--line);
         border-radius:18px; padding:17px; overflow-y:auto; display:flex; flex-direction:column;
-        box-shadow:0 18px 40px rgba(0,0,0,.45); touch-action:none}
+        box-shadow:0 18px 40px rgba(0,0,0,.45); touch-action:pan-y}
   .card.behind{transform:scale(.955) translateY(10px); opacity:.55; box-shadow:none}
   .cbadges{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:10px}
   .pcat{font:600 11px/1 ui-monospace,monospace; color:#0b1020; background:var(--amber); border-radius:6px; padding:3px 7px}
@@ -233,7 +233,7 @@ function renderStack(){
       ctrl('keep','気になる','var(--amber)',ICON.heart,'lg')+
     '</div>'+
     '<div class="undo"><button id="undo" '+(history.length?'':'disabled')+'>'+ICON.undo+' 元に戻す</button></div>'+
-    '<footer>左:見送り / 右:気になる / 上:arXiv ・ '+total+' 本中</footer>';
+    '<footer>左:見送り / 右:気になる ・ 本文は上下スクロール ・ '+total+' 本中</footer>';
 
   const cards = m.querySelectorAll('.card');
   const topEl = cards[cards.length-1];
@@ -245,7 +245,11 @@ function renderStack(){
     };
   });
   $('#undo').onclick = undo;
-  m.querySelectorAll('.controls .cbtn').forEach(b=> b.onclick = ()=> fling(topEl, b.getAttribute('data-a')));
+  m.querySelectorAll('.controls .cbtn').forEach(b=> b.onclick = ()=>{
+    const a=b.getAttribute('data-a');
+    if(a==='open'){ window.open(top.abs_url,'_blank'); return; }  // arXivを開くだけ（仕分けはしない）
+    fling(topEl, a);
+  });
   attachDrag(topEl);
   typeset(topEl);
   updateHeader();
@@ -258,24 +262,32 @@ let drag=null;
 function attachDrag(el){
   el.addEventListener('pointerdown', (e)=>{
     if(e.target.closest('button, a')) return;     // ボタン/リンクのタップは奪わない
-    drag={x0:e.clientX, y0:e.clientY, dx:0, dy:0};
-    el.setPointerCapture && el.setPointerCapture(e.pointerId);
-    el.style.transition='none';
+    drag={x0:e.clientX, y0:e.clientY, dx:0, dy:0, locked:false, id:e.pointerId};
+    // ここではキャプチャしない（縦スクロールを邪魔しないため）
   });
   el.addEventListener('pointermove', (e)=>{
     if(!drag) return;
     drag.dx=e.clientX-drag.x0; drag.dy=e.clientY-drag.y0;
-    el.style.transform='translate('+drag.dx+'px,'+drag.dy+'px) rotate('+(drag.dx/18)+'deg)';
+    if(!drag.locked){
+      if(Math.abs(drag.dx)>8 && Math.abs(drag.dx)>Math.abs(drag.dy)){
+        drag.locked=true;                          // 横移動と判定 → スワイプ開始
+        el.setPointerCapture && el.setPointerCapture(drag.id);
+        el.style.transition='none';
+      } else if(Math.abs(drag.dy)>8){
+        drag=null; return;                         // 縦移動 → 本文スクロールに任せる
+      } else { return; }                           // まだ判定できない
+    }
+    el.style.transform='translate('+drag.dx+'px,0) rotate('+(drag.dx/18)+'deg)';
     const ok=el.querySelector('.ov-keep'), no=el.querySelector('.ov-skip');
     if(ok) ok.style.opacity=Math.max(0,Math.min(1,drag.dx/120));
     if(no) no.style.opacity=Math.max(0,Math.min(1,-drag.dx/120));
   });
   const end=()=>{
-    if(!drag) return; const {dx,dy}=drag; drag=null;
-    if(dx>120) fling(el,'keep');
-    else if(dx<-120) fling(el,'skip');
-    else if(dy<-120) fling(el,'open');
-    else { el.style.transition='transform .22s'; el.style.transform=''; 
+    if(!drag) return; const d=drag; drag=null;
+    if(!d.locked) return;                          // タップ/スクロールだった
+    if(d.dx>120) fling(el,'keep');
+    else if(d.dx<-120) fling(el,'skip');
+    else { el.style.transition='transform .22s'; el.style.transform='';
            const ok=el.querySelector('.ov-keep'),no=el.querySelector('.ov-skip'); if(ok)ok.style.opacity=0; if(no)no.style.opacity=0; }
   };
   el.addEventListener('pointerup', end);
