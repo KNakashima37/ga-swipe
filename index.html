@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GA-Swipe</title>
+<script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},options:{skipHtmlTags:['script','noscript','style','textarea','pre']}};</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  :root{
+    --bg:#0b1020; --panel:#141b30; --panel2:#1b2440; --line:#2a3656;
+    --ink:#e8ecf6; --sub:#9aa6c4; --amber:#f2b24c; --blue:#5aa9ff; --green:#54d6a6;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:'Hiragino Sans','Noto Sans JP',system-ui,sans-serif;
+    display:flex; justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #app{width:100%; max-width:460px; display:flex; flex-direction:column;
+       height:100dvh; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);}
+  header{padding:14px 16px 8px; border-bottom:1px solid var(--line)}
+  .row{display:flex; align-items:center; justify-content:space-between}
+  .brand{display:flex; align-items:center; gap:8px; font-weight:700; font-size:17px; letter-spacing:.3px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--amber)}
+  .tag{font:11px/1 ui-monospace,monospace; color:var(--sub); border:1px solid var(--line); border-radius:6px; padding:3px 6px}
+  .hbtn{background:var(--panel); border:1px solid var(--line); color:var(--sub); border-radius:9px;
+        width:34px; height:34px; display:grid; place-items:center; cursor:pointer}
+  .hbtn svg{width:17px;height:17px}
+  .meta{display:flex; justify-content:space-between; font:11px/1.4 ui-monospace,monospace; color:var(--sub); margin-top:8px}
+  .bar{height:3px; background:var(--line); border-radius:3px; margin-top:8px; overflow:hidden}
+  .bar>i{display:block; height:100%; background:var(--amber); width:0; transition:width .3s}
+  main{flex:1; position:relative; padding:12px 12px 0; overflow:hidden}
+  .stack{position:absolute; inset:12px 12px 0}
+  .card{position:absolute; inset:0; background:var(--panel); border:1px solid var(--line);
+        border-radius:18px; padding:17px; overflow-y:auto; display:flex; flex-direction:column;
+        box-shadow:0 18px 40px rgba(0,0,0,.45); touch-action:none}
+  .card.behind{transform:scale(.955) translateY(10px); opacity:.55; box-shadow:none}
+  .cbadges{display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:10px}
+  .pcat{font:600 11px/1 ui-monospace,monospace; color:#0b1020; background:var(--amber); border-radius:6px; padding:3px 7px}
+  .xcat{font:11px/1 ui-monospace,monospace; color:var(--sub); border:1px solid var(--line); border-radius:6px; padding:2px 6px}
+  .cid{font:11px/1 ui-monospace,monospace; color:var(--sub); margin-left:auto}
+  .ttl{font-size:18px; font-weight:700; line-height:1.45; margin:2px 0 3px}
+  .ttl-en{font-size:12px; color:var(--sub); line-height:1.45; margin:0 0 7px}
+  .auth{font-size:12.5px; color:var(--sub); margin:5px 0 1px}
+  .pub{font:11px/1.4 ui-monospace,monospace; color:var(--sub); margin:0 0 11px}
+  .toggles{display:flex; gap:7px; margin-bottom:9px; flex-wrap:wrap}
+  .tg{display:flex; align-items:center; gap:5px; font-size:12px; color:var(--sub);
+      background:transparent; border:1px solid var(--line); border-radius:8px; padding:5px 10px; cursor:pointer}
+  .tg.on{background:var(--panel2); color:var(--ink)}
+  .abs{font-size:14px; line-height:1.75; color:#d4dcf0; margin:2px 0 13px}
+  .links{margin-top:auto; display:flex; gap:9px; padding-top:6px}
+  .lk{display:flex; align-items:center; gap:5px; font:12px ui-monospace,monospace; text-decoration:none;
+      color:var(--blue); border:1px solid var(--line); border-radius:8px; padding:6px 11px}
+  .overlay{position:absolute; top:16px; padding:4px 12px; border-radius:8px; font-weight:800; font-size:14px; pointer-events:none}
+  .ov-keep{right:16px; color:var(--amber); border:2px solid var(--amber); transform:rotate(-8deg)}
+  .ov-skip{left:16px; color:var(--blue); border:2px solid var(--blue); transform:rotate(8deg)}
+  .controls{display:flex; justify-content:center; gap:14px; padding:14px 0 4px}
+  .cbtn{border-radius:50%; background:var(--panel); display:grid; place-items:center; cursor:pointer}
+  .cbtn.lg{width:58px;height:58px;border:1.5px solid} .cbtn.sm{width:46px;height:46px;border:1.5px solid}
+  .cbtn svg{width:22px;height:22px} .cbtn.sm svg{width:18px;height:18px}
+  .clabel{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:10.5px;color:var(--sub)}
+  .undo{display:flex; justify-content:center; padding-bottom:6px}
+  .undo button{background:none; border:none; color:var(--sub); display:flex; align-items:center; gap:6px;
+                font-size:12.5px; cursor:pointer}
+  .undo button:disabled{color:#3a4666; cursor:default}
+  footer{text-align:center; padding:8px 0 12px; font:10.5px ui-monospace,monospace; color:var(--sub)}
+  .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+          text-align:center; padding:0 22px; gap:14px}
+  .center h2{font-size:20px; margin:0}
+  .center p{color:var(--sub); font-size:14px; line-height:1.7; margin:0}
+  .primary{background:var(--amber); color:#0b1020; border:none; border-radius:11px; padding:12px 20px;
+           font-size:14px; font-weight:700; cursor:pointer}
+  .ghost{background:transparent; color:var(--sub); border:1px solid var(--line); border-radius:11px; padding:11px 18px;
+         font-size:13px; cursor:pointer}
+  .list{position:absolute; inset:0; background:var(--bg); padding:12px; display:flex; flex-direction:column}
+  .list h3{margin:4px 0 12px; font-size:16px}
+  .litem{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:9px}
+  .litem .cid{margin:0 0 5px}
+  .litem .lt{font-size:14.5px; font-weight:700; line-height:1.45}
+  .litem .le{font-size:11.5px; color:var(--sub); margin-top:2px}
+  .exp{display:flex; gap:9px; padding-top:10px}
+  .exp button{flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--panel2);
+              color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:10px 0; font-size:13px; cursor:pointer}
+  .scroll{flex:1; overflow-y:auto}
+  .hidden{display:none !important}
+  input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="row">
+      <div class="brand"><span class="dot"></span>GA-Swipe <span class="tag">astro-ph.GA</span></div>
+      <div style="display:flex; gap:6px">
+        <button class="hbtn" id="btn-load" title="JSONを読み込む">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M5 21h14"/></svg></button>
+        <button class="hbtn" id="btn-list" title="保存リスト">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
+        <button class="hbtn" id="btn-reset" title="リセット">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+      </div>
+    </div>
+    <div class="meta"><span id="m-left">—</span><span id="m-count">処理 0 ・保存 0</span></div>
+    <div class="bar"><i id="bar"></i></div>
+  </header>
+
+  <main id="main"></main>
+
+  <input type="file" id="file" accept=".json,application/json">
+</div>
+
+<script>
+"use strict";
+const $ = (s)=>document.querySelector(s);
+const ICON = {
+  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 21s-7-4.5-9.5-8.5C.7 9.4 2 6 5.2 6c2 0 3 1.2 3.8 2.3C9.8 7.2 10.8 6 12.8 6 16 6 17.3 9.4 15.5 12.5 13 16.5 12 21 12 21z"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7"/></svg>',
+};
+const LS = { read:'gaswipe_read', kept:'gaswipe_kept' };
+
+let ALL = [];
+let QUEUE = [];
+let read = new Set(load(LS.read, []));
+let kept = load(LS.kept, []);        // array of paper objects
+let history = [];
+let lang = 'ja';
+let view = 'stack';
+let total = 0;
+
+function load(k, def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def; }catch(e){ return def; } }
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+function setData(papers){
+  ALL = Array.isArray(papers) ? papers : [];
+  total = ALL.length;
+  QUEUE = ALL.filter(p => !read.has(p.id));
+  history = [];
+  view = 'stack';
+  render();
+}
+
+// --- データ読み込み（http配信時は自動 fetch、それ以外はファイル選択） ---
+async function tryAutoLoad(){
+  try{
+    const r = await fetch('./latest.json', {cache:'no-store'});
+    if(r.ok){ setData(await r.json()); return true; }
+  }catch(e){}
+  return false;
+}
+$('#file').addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = ()=>{ try{ setData(JSON.parse(fr.result)); }catch(err){ alert('JSONを読み込めませんでした'); } };
+  fr.readAsText(f);
+});
+$('#btn-load').onclick = ()=> $('#file').click();
+$('#btn-list').onclick = ()=>{ view = (view==='list'?'stack':'list'); render(); };
+$('#btn-reset').onclick = ()=>{
+  if(!confirm('既読と保存をすべて消去しますか？')) return;
+  read = new Set(); kept = []; save(LS.read, []); save(LS.kept, []);
+  QUEUE = ALL.slice(); history = []; view='stack'; render();
+};
+
+function commit(action){
+  const p = QUEUE.shift(); if(!p) return;
+  read.add(p.id); save(LS.read, [...read]);
+  const wasKept = kept.some(x=>x.id===p.id);
+  if(action!=='skip' && !wasKept){ kept.push(p); save(LS.kept, kept); }
+  if(action==='open'){ window.open(p.abs_url, '_blank'); }
+  history.push({p, action, addedKept: (action!=='skip' && !wasKept)});
+  render();
+}
+function undo(){
+  const h = history.pop(); if(!h) return;
+  read.delete(h.p.id); save(LS.read, [...read]);
+  if(h.addedKept){ kept = kept.filter(x=>x.id!==h.p.id); save(LS.kept, kept); }
+  QUEUE.unshift(h.p);
+  if(view==='done') view='stack';
+  render();
+}
+
+function typeset(el){ if(window.MathJax && window.MathJax.typesetPromise){ window.MathJax.typesetPromise([el]).catch(()=>{}); } }
+
+function updateHeader(){
+  const processed = total - QUEUE.length;
+  $('#m-left').textContent = QUEUE.length>0 ? ('残り '+QUEUE.length+' 本') : (total? '完了':'未読込');
+  $('#m-count').textContent = '処理 '+processed+' ・保存 '+kept.length;
+  $('#bar').style.width = total ? (processed/total*100)+'%' : '0%';
+}
+
+function cardHTML(p, behind){
+  const isJa = lang==='ja';
+  const title = (isJa && p.title_ja) ? p.title_ja : p.title;
+  const hasJaAbs = !!p.abstract_ja;
+  const abs = (isJa && hasJaAbs) ? p.abstract_ja : p.abstract;
+  const cross = (p.cross||[]).map(c=>'<span class="xcat">'+esc(c)+'</span>').join('');
+  const auth = (p.authors||[]).slice(0,3).join(', ') + ((p.authors||[]).length>3?' ほか':'');
+  const enttl = (isJa && p.title_ja) ? '<div class="ttl-en">'+esc(p.title)+'</div>' : '';
+  const cmt = p.comment ? ' · '+esc(p.comment) : '';
+  return ''+
+    '<div class="card'+(behind?' behind':'')+'">'+
+      '<div class="cbadges"><span class="pcat">'+esc(p.primary||'')+'</span>'+cross+'<span class="cid">'+esc(p.id)+'</span></div>'+
+      '<div class="ttl">'+esc(title)+'</div>'+enttl+
+      '<div class="auth">'+esc(auth)+'</div>'+
+      '<div class="pub">'+esc(p.published||'')+cmt+'</div>'+
+      (behind?'':(
+        '<div class="toggles">'+
+          (p.title_ja||hasJaAbs ? '<button class="tg" data-act="lang">'+(isJa?'原文を見る':'日本語')+'</button>':'')+
+          (hasJaAbs?'':'<button class="tg on" data-act="trans">arXivで開いて翻訳</button>')+
+        '</div>'))+
+      '<div class="abs">'+esc(abs)+'</div>'+
+      '<div class="links"><a class="lk" href="'+p.abs_url+'" target="_blank" rel="noreferrer">abs</a>'+
+        '<a class="lk" href="'+p.pdf_url+'" target="_blank" rel="noreferrer">PDF</a></div>'+
+      (behind?'':'<div class="overlay ov-keep" style="opacity:0">気になる ↗</div><div class="overlay ov-skip" style="opacity:0">↖ 見送り</div>')+
+    '</div>';
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function renderStack(){
+  const top = QUEUE[0], next = QUEUE[1];
+  if(!top){ renderDone(); return; }
+  const m = $('#main');
+  m.innerHTML =
+    '<div class="stack">'+ (next?cardHTML(next,true):'') + cardHTML(top,false) +'</div>'+
+    '<div class="controls">'+
+      ctrl('skip','見送り','var(--blue)',ICON.x,'lg')+
+      ctrl('open','arXiv','var(--sub)',ICON.clock,'sm')+
+      ctrl('keep','気になる','var(--amber)',ICON.heart,'lg')+
+    '</div>'+
+    '<div class="undo"><button id="undo" '+(history.length?'':'disabled')+'>'+ICON.undo+' 元に戻す</button></div>'+
+    '<footer>左:見送り / 右:気になる / 上:arXiv ・ '+total+' 本中</footer>';
+
+  const cards = m.querySelectorAll('.card');
+  const topEl = cards[cards.length-1];
+  topEl.querySelectorAll('.tg').forEach(b=>{
+    b.onclick=(e)=>{ e.stopPropagation();
+      const a=b.getAttribute('data-act');
+      if(a==='lang'){ lang = (lang==='ja'?'en':'ja'); renderStack(); }
+      if(a==='trans'){ window.open(top.abs_url,'_blank'); }
+    };
+  });
+  $('#undo').onclick = undo;
+  m.querySelectorAll('.controls .cbtn').forEach(b=> b.onclick = ()=> fling(topEl, b.getAttribute('data-a')));
+  attachDrag(topEl);
+  typeset(topEl);
+  updateHeader();
+}
+function ctrl(a,label,color,icon,size){
+  return '<div class="clabel"><button class="cbtn '+size+'" data-a="'+a+'" style="border-color:'+color+'; color:'+color+'">'+icon+'</button>'+label+'</div>';
+}
+
+let drag=null;
+function attachDrag(el){
+  el.addEventListener('pointerdown', (e)=>{
+    if(e.target.closest('button, a')) return;     // ボタン/リンクのタップは奪わない
+    drag={x0:e.clientX, y0:e.clientY, dx:0, dy:0};
+    el.setPointerCapture && el.setPointerCapture(e.pointerId);
+    el.style.transition='none';
+  });
+  el.addEventListener('pointermove', (e)=>{
+    if(!drag) return;
+    drag.dx=e.clientX-drag.x0; drag.dy=e.clientY-drag.y0;
+    el.style.transform='translate('+drag.dx+'px,'+drag.dy+'px) rotate('+(drag.dx/18)+'deg)';
+    const ok=el.querySelector('.ov-keep'), no=el.querySelector('.ov-skip');
+    if(ok) ok.style.opacity=Math.max(0,Math.min(1,drag.dx/120));
+    if(no) no.style.opacity=Math.max(0,Math.min(1,-drag.dx/120));
+  });
+  const end=()=>{
+    if(!drag) return; const {dx,dy}=drag; drag=null;
+    if(dx>120) fling(el,'keep');
+    else if(dx<-120) fling(el,'skip');
+    else if(dy<-120) fling(el,'open');
+    else { el.style.transition='transform .22s'; el.style.transform=''; 
+           const ok=el.querySelector('.ov-keep'),no=el.querySelector('.ov-skip'); if(ok)ok.style.opacity=0; if(no)no.style.opacity=0; }
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+}
+function fling(el, action){
+  el.style.transition='transform .24s ease-out';
+  if(action==='keep') el.style.transform='translate(600px,0) rotate(22deg)';
+  else if(action==='skip') el.style.transform='translate(-600px,0) rotate(-22deg)';
+  else el.style.transform='translate(0,-700px)';
+  setTimeout(()=>commit(action), 230);
+}
+
+function renderDone(){
+  const m=$('#main');
+  m.innerHTML='<div class="center">'+
+    '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M12 3l2.2 5.6L20 9l-4.5 3.8L17 19l-5-3-5 3 1.5-6.2L4 9l5.8-.4L12 3z"/></svg>'+
+    '<h2>'+(total? 'すべて確認しました':'論文を読み込んでください')+'</h2>'+
+    '<p>'+(total? ('<b style="color:var(--amber)">'+kept.length+' 本</b>を「気になる」に保存しました'):'右上の↓ボタンから latest.json を読み込むか、<br>このページを http で配信すると自動で読み込みます')+'</p>'+
+    (total? '<button class="primary" id="d-list">保存リストを見る</button>'+
+            (history.length?'<button class="ghost" id="d-undo">直前を取り消す</button>':'')
+          : '<button class="primary" id="d-load">JSONを読み込む</button>')+
+    '</div>';
+  if($('#d-list')) $('#d-list').onclick=()=>{ view='list'; render(); };
+  if($('#d-undo')) $('#d-undo').onclick=undo;
+  if($('#d-load')) $('#d-load').onclick=()=> $('#file').click();
+  updateHeader();
+}
+
+function renderList(){
+  const m=$('#main');
+  const items = kept.map(p=>
+    '<div class="litem"><div class="cid">'+esc(p.id)+' · '+esc(p.primary||'')+'</div>'+
+    '<div class="lt">'+esc(p.title_ja||p.title)+'</div><div class="le">'+esc(p.title)+'</div>'+
+    '<div class="links" style="margin-top:8px"><a class="lk" href="'+p.abs_url+'" target="_blank" rel="noreferrer">abs</a>'+
+    '<a class="lk" href="'+p.pdf_url+'" target="_blank" rel="noreferrer">PDF</a></div></div>').join('');
+  m.innerHTML='<div class="list"><div class="row"><h3>気になる ('+kept.length+')</h3>'+
+    '<button class="ghost" id="l-back">スワイプに戻る</button></div>'+
+    (kept.length? '<div class="scroll">'+items+'</div>'+
+      '<div class="exp"><button id="ex-md">Markdownでコピー</button><button id="ex-bib">BibTeXでコピー</button></div>'
+      : '<div class="center"><p>まだ保存はありません。<br>右スワイプ（気になる）で溜まります。</p></div>')+
+    '</div>';
+  $('#l-back').onclick=()=>{ view='stack'; render(); };
+  if($('#ex-md')) $('#ex-md').onclick=()=>copy(kept.map(p=>'- ['+p.title+']('+p.abs_url+') — '+(p.authors||[]).join(', ')+' ('+p.id+')').join('\n'),'#ex-md','Markdownでコピー');
+  if($('#ex-bib')) $('#ex-bib').onclick=()=>copy(kept.map(bibtex).join('\n\n'),'#ex-bib','BibTeXでコピー');
+  if(window.MathJax) typeset(m);
+  updateHeader();
+}
+function bibtex(p){
+  const first=((p.authors&&p.authors[0])||'anon').split(' ').slice(-1)[0].replace(/\W/g,'');
+  const yr=(p.published||'').slice(0,4);
+  return '@article{'+first+yr+'_'+String(p.id).replace(/\./g,'')+',\n  title={'+p.title+'},\n  author={'+((p.authors||[]).join(' and '))+'},\n  year={'+yr+'},\n  eprint={'+p.id+'},\n  archivePrefix={arXiv},\n  primaryClass={'+(p.primary||'')+'}\n}';
+}
+function copy(text, sel, label){
+  navigator.clipboard.writeText(text).then(()=>{
+    const b=$(sel); if(!b) return; const t=b.textContent; b.textContent='コピーしました ✓';
+    setTimeout(()=>{ b.textContent=label; }, 1300);
+  }).catch(()=>alert('コピーできませんでした'));
+}
+
+function render(){
+  if(view==='list') return renderList();
+  if(QUEUE.length===0 && total>=0) return renderDone();
+  renderStack();
+}
+
+// 起動
+(async ()=>{ const ok = await tryAutoLoad(); if(!ok){ render(); } })();
+</script>
+</body>
+</html>
