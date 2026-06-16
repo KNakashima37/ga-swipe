@@ -1,0 +1,52 @@
+# GitHub Actions: 毎日 astro-ph.GA を取得・翻訳して latest.json を自動更新する
+# 置き場所: リポジトリ内の  .github/workflows/update.yml
+#
+# 事前に必要な準備（GitHubサイト上で1回だけ）:
+#   1) リポジトリに ga_fetch.py と swipe.html(または index.html) を入れておく
+#   2) Settings → Secrets and variables → Actions → New repository secret で
+#        DEEPL_API_KEY = あなたのDeepLキー(....:fx)
+#        GA_CONTACT    = あなたのメール（arXivへの連絡先・任意だが推奨）
+#   3) Actions タブで初回だけ「Run workflow」を押すと latest.json が生成される
+
+name: Update arXiv digest
+
+on:
+  schedule:
+    - cron: '0 21 * * *'      # 毎日 21:00 UTC ≒ 翌 06:00 JST に実行（変更可）
+  workflow_dispatch:           # 手動実行ボタンも有効化
+
+permissions:
+  contents: write              # latest.json をコミットし返すために必要
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install feedparser deepl
+
+      - name: Fetch + translate (titles only)
+        env:
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          GA_CONTACT: ${{ secrets.GA_CONTACT }}
+        run: |
+          # 直近7日ぶんを毎回出力（スマホ側で既読を除外するので、数日空けても取りこぼさない）
+          # 翻訳キャッシュ(cache.json)を使うので、新しいタイトルだけ翻訳＝無料枠をほぼ消費しない
+          python ga_fetch.py --engine deepl --title-only --days 7 --ignore-seen
+          cp ga_swipe/out/latest.json latest.json
+
+      - name: Commit updated data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add latest.json ga_swipe/cache.json
+          git commit -m "auto: update astro-ph.GA digest" || echo "no changes"
+          git push
