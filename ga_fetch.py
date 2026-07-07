@@ -351,7 +351,7 @@ def render_html(papers, meta):
     return f"""<!doctype html><html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>astro-ph.GA digest</title>
 <script>window.MathJax={{tex:{{inlineMath:[['$','$'],['\\\\(','\\\\)']],displayMath:[['$$','$$'],['\\\\[','\\\\]']]}},options:{{skipHtmlTags:['script','noscript','style','textarea','pre']}}}};</script>
-<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
 <style>{css}</style></head><body>
 <h1>astro-ph.GA 新着ダイジェスト</h1>
 <div class="meta">{meta['generated']} · カテゴリ {meta['category']} · {meta['since']} 以降 · 翻訳 {meta['engine']} · 新着 {len(papers)} 件</div>
