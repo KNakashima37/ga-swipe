@@ -55,9 +55,12 @@ def load_json(path, fallback):
 
 
 def save_json(path, obj):
+    # 一時ファイルに書いてから os.replace で差し替える（中断時に元ファイルを壊さない）
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
 
 
 # --------------------------------------------------------------------------

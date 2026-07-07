@@ -134,6 +134,25 @@ class TestTranslatePapers(unittest.TestCase):
         self.assertEqual(papers[0]["abstract_ja"], "")
 
 
+class TestSaveJson(unittest.TestCase):
+    def test_roundtrip(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "sub", "x.json")
+            ga_fetch.save_json(path, {"k": "v"})
+            self.assertEqual(ga_fetch.load_json(path, None), {"k": "v"})
+
+    def test_interrupted_write_keeps_original(self):
+        # 書き込み途中で落ちても既存ファイルが破損しないこと（アトミック性）
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "x.json")
+            ga_fetch.save_json(path, {"k": "old"})
+            with mock.patch.object(ga_fetch.json, "dump", side_effect=OSError("disk full")):
+                with self.assertRaises(OSError):
+                    ga_fetch.save_json(path, {"k": "new"})
+            self.assertEqual(ga_fetch.load_json(path, None), {"k": "old"})
+
+
 class TestLoadJson(unittest.TestCase):
     def test_missing_file_returns_fallback(self):
         self.assertEqual(ga_fetch.load_json("/nonexistent/x.json", {"a": 1}), {"a": 1})
