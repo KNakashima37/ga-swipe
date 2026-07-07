@@ -177,7 +177,6 @@ function commit(action){
   read.add(p.id); save(LS.read, [...read]);
   const wasKept = kept.some(x=>x.id===p.id);
   if(action!=='skip' && !wasKept){ kept.push(p); save(LS.kept, kept); }
-  if(action==='open'){ window.open(p.abs_url, '_blank'); }
   history.push({p, action, addedKept: (action!=='skip' && !wasKept)});
   render();
 }
@@ -186,7 +185,6 @@ function undo(){
   read.delete(h.p.id); save(LS.read, [...read]);
   if(h.addedKept){ kept = kept.filter(x=>x.id!==h.p.id); save(LS.kept, kept); }
   QUEUE.unshift(h.p);
-  if(view==='done') view='stack';
   render();
 }
 
@@ -302,8 +300,7 @@ function attachDrag(el){
 function fling(el, action){
   el.style.transition='transform .24s ease-out';
   if(action==='keep') el.style.transform='translate(600px,0) rotate(22deg)';
-  else if(action==='skip') el.style.transform='translate(-600px,0) rotate(-22deg)';
-  else el.style.transform='translate(0,-700px)';
+  else el.style.transform='translate(-600px,0) rotate(-22deg)';
   setTimeout(()=>commit(action), 230);
 }
 
@@ -356,7 +353,7 @@ function copy(text, sel, label){
 
 function render(){
   if(view==='list') return renderList();
-  if(QUEUE.length===0 && total>=0) return renderDone();
+  if(QUEUE.length===0) return renderDone();
   renderStack();
 }
 
