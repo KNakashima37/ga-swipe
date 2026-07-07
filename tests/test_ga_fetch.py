@@ -246,6 +246,23 @@ class TestFetchArxiv(unittest.TestCase):
         self.assertEqual(len(papers), 1)
 
 
+class TestTooFewResults(unittest.TestCase):
+    def test_triggers_on_few_results_with_wide_window(self):
+        self.assertTrue(ga_fetch.too_few_results(0, days=7, min_results=10))
+        self.assertTrue(ga_fetch.too_few_results(9, days=7, min_results=10))
+
+    def test_ok_when_enough_results(self):
+        self.assertFalse(ga_fetch.too_few_results(10, days=7, min_results=10))
+
+    def test_disabled_for_narrow_window_or_state_mode(self):
+        # --days 未指定（状態ベースの差分取得）や短い窓では0件もあり得るので発動しない
+        self.assertFalse(ga_fetch.too_few_results(0, days=None, min_results=10))
+        self.assertFalse(ga_fetch.too_few_results(0, days=1, min_results=10))
+
+    def test_disabled_with_zero_threshold(self):
+        self.assertFalse(ga_fetch.too_few_results(0, days=7, min_results=0))
+
+
 class TestMergeSeenIds(unittest.TestCase):
     def test_appends_new_and_dedupes(self):
         self.assertEqual(ga_fetch.merge_seen_ids(["a", "b"], ["b", "c"]),
