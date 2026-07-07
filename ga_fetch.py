@@ -54,6 +54,17 @@ def load_json(path, fallback):
         return fallback
 
 
+def merge_seen_ids(old_ids, new_ids, cap=3000):
+    """既出IDリストに new_ids を追記し、古い方から捨てて cap 件に保つ（順序を保持）。"""
+    seen = set(old_ids)
+    merged = list(old_ids)
+    for i in new_ids:
+        if i not in seen:
+            seen.add(i)
+            merged.append(i)
+    return merged[-cap:]
+
+
 def save_json(path, obj):
     # 一時ファイルに書いてから os.replace で差し替える（中断時に元ファイルを壊さない）
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -425,7 +436,7 @@ def main():
 
     # 状態更新
     state["last_run"] = now.isoformat()
-    state["seen_ids"] = list(seen_ids | {p["id"] for p in papers})[-3000:]
+    state["seen_ids"] = merge_seen_ids(state.get("seen_ids", []), [p["id"] for p in papers])
     save_json(state_path, state)
     save_json(cache_path, cache)
 

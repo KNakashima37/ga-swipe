@@ -134,6 +134,24 @@ class TestTranslatePapers(unittest.TestCase):
         self.assertEqual(papers[0]["abstract_ja"], "")
 
 
+class TestMergeSeenIds(unittest.TestCase):
+    def test_appends_new_and_dedupes(self):
+        self.assertEqual(ga_fetch.merge_seen_ids(["a", "b"], ["b", "c"]),
+                         ["a", "b", "c"])
+
+    def test_cap_drops_oldest_first(self):
+        # 上限超過時は「古いID」から捨てられること（新しいIDは必ず残る）
+        old = [f"id{i}" for i in range(3000)]
+        out = ga_fetch.merge_seen_ids(old, ["new1", "new2"])
+        self.assertEqual(len(out), 3000)
+        self.assertNotIn("id0", out)
+        self.assertNotIn("id1", out)
+        self.assertEqual(out[-2:], ["new1", "new2"])
+
+    def test_empty_old(self):
+        self.assertEqual(ga_fetch.merge_seen_ids([], ["a"]), ["a"])
+
+
 class TestSaveJson(unittest.TestCase):
     def test_roundtrip(self):
         with tempfile.TemporaryDirectory() as d:
