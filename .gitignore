@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+ga_swipe/out/
+ga_swipe/state.json
+*.json.tmp
