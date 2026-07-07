@@ -154,9 +154,20 @@ function setData(papers){
 async function tryAutoLoad(){
   try{
     const r = await fetch('./latest.json', {cache:'no-store'});
-    if(r.ok){ setData(await r.json()); return true; }
+    if(r.ok){ setData(await r.json()); pruneRead(); return true; }
   }catch(e){}
   return false;
+}
+// 既読ID(gaswipe_read)のうち、現在の配信データに無いもの＝7日窓から出て
+// 二度と配信されない論文のIDを削除し、localStorage の無限成長を防ぐ。
+// 保存リスト(gaswipe_kept)には一切触れない。手動ファイル読み込み時は呼ばない
+// （古いJSONを開いた場合に現行の既読が消えるのを防ぐため、自動読み込み成功時のみ）。
+function pruneRead(){
+  if(!ALL.length) return;
+  const current = new Set(ALL.map(p=>p.id));
+  const before = read.size;
+  read = new Set([...read].filter(id=>current.has(id)));
+  if(read.size !== before) save(LS.read, [...read]);
 }
 $('#file').addEventListener('change', (e)=>{
   const f = e.target.files[0]; if(!f) return;
