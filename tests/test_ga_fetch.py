@@ -134,6 +134,118 @@ class TestTranslatePapers(unittest.TestCase):
         self.assertEqual(papers[0]["abstract_ja"], "")
 
 
+_FEED_HEADER = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<feed xmlns="http://www.w3.org/2005/Atom" '
+                'xmlns:arxiv="http://arxiv.org/schemas/atom">')
+
+
+def _make_feed_xml(ids, published="2025-06-12T17:30:00Z"):
+    entries = "".join(f"""
+ <entry>
+  <id>http://arxiv.org/abs/{i}v1</id>
+  <published>{published}</published>
+  <updated>{published}</updated>
+  <title>Paper {i}</title>
+  <summary>Abstract {i}</summary>
+  <author><name>A. Researcher</name></author>
+  <arxiv:primary_category term="astro-ph.GA"/>
+  <category term="astro-ph.GA"/>
+ </entry>""" for i in ids)
+    return f"{_FEED_HEADER}{entries}\n</feed>".encode()
+
+
+def _parse_entries(ids, published="2025-06-12T17:30:00Z"):
+    import feedparser
+    return feedparser.parse(_make_feed_xml(ids, published)).entries
+
+
+class _FakeResp:
+    def __init__(self, raw):
+        self.raw = raw
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return self.raw
+
+
+class TestFetchPage(unittest.TestCase):
+    """_fetch_page のリトライ挙動（urlopen と sleep をモック、ネット不要）。"""
+
+    def _run(self, side_effects, **kw):
+        from unittest import mock
+        with mock.patch.object(ga_fetch.urllib.request, "urlopen",
+                               side_effect=side_effects) as m, \
+             mock.patch.object(ga_fetch.time, "sleep"):
+            result = ga_fetch._fetch_page("http://x", "ua", **kw)
+        return result, m.call_count
+
+    def test_retries_after_http_error_then_succeeds(self):
+        import urllib.error
+        err = urllib.error.HTTPError("http://x", 406, "Not Acceptable", {}, None)
+        entries, calls = self._run([err, _FakeResp(_make_feed_xml(["2506.10001"]))])
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(calls, 2)
+
+    def test_retries_after_empty_response_then_succeeds(self):
+        empty = _FakeResp(_make_feed_xml([]))
+        ok = _FakeResp(_make_feed_xml(["2506.10001"]))
+        entries, calls = self._run([empty, ok])
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(calls, 2)
+
+    def test_returns_empty_after_all_retries_empty(self):
+        empty = [_FakeResp(_make_feed_xml([])) for _ in range(3)]
+        entries, calls = self._run(empty, tries=3)
+        self.assertEqual(entries, [])
+        self.assertEqual(calls, 3)
+
+    def test_raises_after_persistent_errors(self):
+        import urllib.error
+        err = urllib.error.HTTPError("http://x", 406, "Not Acceptable", {}, None)
+        from unittest import mock
+        with mock.patch.object(ga_fetch.urllib.request, "urlopen", side_effect=[err] * 3), \
+             mock.patch.object(ga_fetch.time, "sleep"):
+            with self.assertRaises(urllib.error.HTTPError):
+                ga_fetch._fetch_page("http://x", "ua", tries=3)
+
+
+class TestFetchArxiv(unittest.TestCase):
+    """fetch_arxiv のページング挙動（_fetch_page をモック、ネット不要）。"""
+
+    def _fetch(self, pages, max_results=10, page_size=2, since_year=2020):
+        import datetime as dt
+        from unittest import mock
+        since = dt.datetime(since_year, 1, 1, tzinfo=ga_fetch.UTC)
+        with mock.patch.object(ga_fetch, "_fetch_page", side_effect=pages), \
+             mock.patch.object(ga_fetch.time, "sleep"):
+            return ga_fetch.fetch_arxiv("astro-ph.GA", since, max_results,
+                                        "t@example.com", page_size=page_size)
+
+    def test_short_page_does_not_truncate(self):
+        # 途中のページが要求(2件)より短くても、次が空になるまで取得を続けること
+        pages = [_parse_entries(["2506.10001"]),   # 短いページ（1件 < 2件）
+                 _parse_entries(["2506.10002"]),
+                 []]
+        papers = self._fetch(pages)
+        self.assertEqual([p["id"] for p in papers], ["2506.10001", "2506.10002"])
+
+    def test_stops_at_since_boundary(self):
+        # since より古い published が現れたらそのページで打ち切ること
+        pages = [_parse_entries(["2506.10001"], published="2019-06-12T00:00:00Z")]
+        papers = self._fetch(pages, since_year=2020)
+        self.assertEqual(papers, [])
+
+    def test_dedupes_cross_listed_versions(self):
+        pages = [_parse_entries(["2506.10001", "2506.10001"]), []]
+        papers = self._fetch(pages)
+        self.assertEqual(len(papers), 1)
+
+
 class TestMergeSeenIds(unittest.TestCase):
     def test_appends_new_and_dedupes(self):
         self.assertEqual(ga_fetch.merge_seen_ids(["a", "b"], ["b", "c"]),

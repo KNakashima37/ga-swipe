@@ -77,10 +77,35 @@ def save_json(path, obj):
 # --------------------------------------------------------------------------
 # arXiv 取得
 # --------------------------------------------------------------------------
-def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
-    """category の論文を submittedDate 降順で取得し、published >= since_dt のものを返す。"""
+def _fetch_page(url, ua, tries=3, wait=5.0):
+    """arXiv API から1ページ取得。一時的な失敗（HTTPエラー・タイムアウト・空応答）は
+    wait 秒あけて最大 tries 回まで再試行する（arXiv の3秒間隔の要請より長い間隔）。
+    再試行しても空のままなら [] を返し、エラーのままなら例外を投げる。"""
     import feedparser  # 必須依存。ここで import して未導入時に分かりやすく落とす。
 
+    last_err = None
+    for attempt in range(tries):
+        if attempt:
+            print(f"[warn] arXiv 応答不良のため再試行 {attempt}/{tries - 1} …", file=sys.stderr)
+            time.sleep(wait)
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": ua})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                raw = resp.read()
+        except Exception as ex:
+            last_err = ex
+            continue
+        entries = feedparser.parse(raw).entries
+        if entries:
+            return entries
+        # 空応答: arXiv API は一時的に空を返すことがある → 再試行
+    if last_err is not None:
+        raise last_err
+    return []
+
+
+def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
+    """category の論文を submittedDate 降順で取得し、published >= since_dt のものを返す。"""
     ua = f"ga-swipe/0.1 (mailto:{contact})"
     out, start = [], 0
     while len(out) < max_results:
@@ -92,13 +117,9 @@ def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
             "max_results": min(page_size, max_results - len(out)),
         }
         url = f"{ARXIV_API}?{urllib.parse.urlencode(params)}"
-        req = urllib.request.Request(url, headers={"User-Agent": ua})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            raw = resp.read()
-        feed = feedparser.parse(raw)
-        entries = feed.entries
+        entries = _fetch_page(url, ua)
         if not entries:
-            break
+            break  # リトライ後も空 → 結果の末尾に達したと判断
 
         stop = False
         for e in entries:
@@ -110,8 +131,10 @@ def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
                 stop = True
                 break
             out.append(p)
-        if stop or len(entries) < params["max_results"]:
+        if stop:
             break
+        # 要求より短いページでも打ち切らない（arXiv API は途中のページを一時的に
+        # 短く返すことがある）。末尾かどうかは次の要求が空かどうかで判定する。
         start += len(entries)
         time.sleep(3.0)  # arXiv への礼儀
 
