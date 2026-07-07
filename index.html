@@ -173,6 +173,7 @@ $('#btn-reset').onclick = ()=>{
 };
 
 function commit(action){
+  animating = false;
   const p = QUEUE.shift(); if(!p) return;
   read.add(p.id); save(LS.read, [...read]);
   const wasKept = kept.some(x=>x.id===p.id);
@@ -181,6 +182,7 @@ function commit(action){
   render();
 }
 function undo(){
+  if(animating) return;                            // 仕分けアニメーション中は無効
   const h = history.pop(); if(!h) return;
   read.delete(h.p.id); save(LS.read, [...read]);
   if(h.addedKept){ kept = kept.filter(x=>x.id!==h.p.id); save(LS.kept, kept); }
@@ -263,8 +265,10 @@ function ctrl(a,label,color,icon,size){
 }
 
 let drag=null;
+let animating=false;   // カード仕分けアニメーション中（多重 commit を防ぐ）
 function attachDrag(el){
   el.addEventListener('pointerdown', (e)=>{
+    if(animating) return;                         // 仕分け確定待ちの間は次の操作を受けない
     if(e.target.closest('button, a')) return;     // ボタン/リンクのタップは奪わない
     drag={x0:e.clientX, y0:e.clientY, dx:0, dy:0, locked:false, id:e.pointerId};
     // ここではキャプチャしない（縦スクロールを邪魔しないため）
@@ -298,6 +302,8 @@ function attachDrag(el){
   el.addEventListener('pointercancel', end);
 }
 function fling(el, action){
+  if(animating) return;                            // 連打で見ていない次のカードまで仕分けされるのを防ぐ
+  animating = true;
   el.style.transition='transform .24s ease-out';
   if(action==='keep') el.style.transform='translate(600px,0) rotate(22deg)';
   else el.style.transform='translate(-600px,0) rotate(-22deg)';
