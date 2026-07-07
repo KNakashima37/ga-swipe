@@ -220,12 +220,14 @@ function cardHTML(p, behind){
           (hasJaAbs?'':'<button class="tg on" data-act="trans">arXivで開いて翻訳</button>')+
         '</div>'))+
       '<div class="abs">'+esc(abs)+'</div>'+
-      '<div class="links"><a class="lk" href="'+p.abs_url+'" target="_blank" rel="noreferrer">abs</a>'+
-        '<a class="lk" href="'+p.pdf_url+'" target="_blank" rel="noreferrer">PDF</a></div>'+
+      '<div class="links"><a class="lk" href="'+esc(safeUrl(p.abs_url))+'" target="_blank" rel="noreferrer">abs</a>'+
+        '<a class="lk" href="'+esc(safeUrl(p.pdf_url))+'" target="_blank" rel="noreferrer">PDF</a></div>'+
       (behind?'':'<div class="overlay ov-keep" style="opacity:0">気になる ↗</div><div class="overlay ov-skip" style="opacity:0">↖ 見送り</div>')+
     '</div>';
 }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+// 手動読み込みした JSON に javascript: URL 等が混ざっても実行されないようにする
+function safeUrl(u){ u=String(u==null?'':u); return /^https?:\/\//i.test(u) ? u : '#'; }
 
 function renderStack(){
   const top = QUEUE[0], next = QUEUE[1];
@@ -247,13 +249,13 @@ function renderStack(){
     b.onclick=(e)=>{ e.stopPropagation();
       const a=b.getAttribute('data-act');
       if(a==='lang'){ lang = (lang==='ja'?'en':'ja'); renderStack(); }
-      if(a==='trans'){ window.open(top.abs_url,'_blank'); }
+      if(a==='trans'){ window.open(safeUrl(top.abs_url),'_blank'); }
     };
   });
   $('#undo').onclick = undo;
   m.querySelectorAll('.controls .cbtn').forEach(b=> b.onclick = ()=>{
     const a=b.getAttribute('data-a');
-    if(a==='open'){ window.open(top.abs_url,'_blank'); return; }  // arXivを開くだけ（仕分けはしない）
+    if(a==='open'){ window.open(safeUrl(top.abs_url),'_blank'); return; }  // arXivを開くだけ（仕分けはしない）
     fling(topEl, a);
   });
   attachDrag(topEl);
@@ -331,8 +333,8 @@ function renderList(){
   const items = kept.map(p=>
     '<div class="litem"><div class="cid">'+esc(p.id)+' · '+esc(p.primary||'')+'</div>'+
     '<div class="lt">'+esc(p.title_ja||p.title)+'</div><div class="le">'+esc(p.title)+'</div>'+
-    '<div class="links" style="margin-top:8px"><a class="lk" href="'+p.abs_url+'" target="_blank" rel="noreferrer">abs</a>'+
-    '<a class="lk" href="'+p.pdf_url+'" target="_blank" rel="noreferrer">PDF</a></div></div>').join('');
+    '<div class="links" style="margin-top:8px"><a class="lk" href="'+esc(safeUrl(p.abs_url))+'" target="_blank" rel="noreferrer">abs</a>'+
+    '<a class="lk" href="'+esc(safeUrl(p.pdf_url))+'" target="_blank" rel="noreferrer">PDF</a></div></div>').join('');
   m.innerHTML='<div class="list"><div class="row"><h3>気になる ('+kept.length+')</h3>'+
     '<button class="ghost" id="l-back">スワイプに戻る</button></div>'+
     (kept.length? '<div class="scroll">'+items+'</div>'+
