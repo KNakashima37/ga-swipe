@@ -6,11 +6,9 @@ compatibility_date = "2024-09-23"
 [vars]
 ALLOWED_ORIGIN = "https://<your-username>.github.io"
 
-# 事前に `wrangler kv namespace create TRANSLATE_CACHE` 等で作成し、
-# 出力された id をここに貼り付ける（README参照）
 kv_namespaces = [
-  { binding = "TRANSLATE_CACHE", id = "<TRANSLATE_CACHE の namespace id>" },
-  { binding = "RATE_LIMIT_KV", id = "<RATE_LIMIT_KV の namespace id>" },
+  { binding = "TRANSLATE_CACHE", id = "492b55f67ddd4c239bf54921e2dd0b7d" },
+  { binding = "RATE_LIMIT_KV", id = "66afbea0b0a9430b85a21bd11cf6ce1a" },
 ]
 
 # DEEPL_API_KEY は secret のためここには書かない。
