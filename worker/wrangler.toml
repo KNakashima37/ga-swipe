@@ -10,7 +10,7 @@ kv_namespaces = [
 ]
 
 [vars]
-ALLOWED_ORIGIN = "https://KNakashima37.github.io"
+ALLOWED_ORIGIN = "https://knakashima37.github.io"
 
 # DEEPL_API_KEY は secret のためここには書かない。
 # `wrangler secret put DEEPL_API_KEY` で登録する。

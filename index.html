@@ -140,7 +140,6 @@ let read = new Set(load(LS.read, []));
 let kept = load(LS.kept, []);        // array of paper objects
 let absJa = load(LS.absja, {});      // { [id]: 翻訳済みアブスト } ワンタップ翻訳のキャッシュ
 let history = [];
-let lang = 'ja';
 let view = 'stack';
 let total = 0;
 
@@ -244,13 +243,12 @@ function updateHeader(){
 }
 
 function cardHTML(p, behind){
-  const isJa = lang==='ja';
-  const title = (isJa && p.title_ja) ? p.title_ja : p.title;
+  const title = p.title_ja || p.title;
   const hasJaAbs = !!p.abstract_ja;
-  const abs = (isJa && hasJaAbs) ? p.abstract_ja : p.abstract;
+  const abs = hasJaAbs ? p.abstract_ja : p.abstract;
   const cross = (p.cross||[]).map(c=>'<span class="xcat">'+esc(c)+'</span>').join('');
   const auth = (p.authors||[]).slice(0,3).join(', ') + ((p.authors||[]).length>3?' ほか':'');
-  const enttl = (isJa && p.title_ja) ? '<div class="ttl-en">'+esc(p.title)+'</div>' : '';
+  const enttl = p.title_ja ? '<div class="ttl-en">'+esc(p.title)+'</div>' : '';
   const cmt = p.comment ? ' · '+esc(p.comment) : '';
   return ''+
     '<div class="card'+(behind?' behind':'')+'">'+
@@ -258,11 +256,7 @@ function cardHTML(p, behind){
       '<div class="ttl">'+esc(title)+'</div>'+enttl+
       '<div class="auth">'+esc(auth)+'</div>'+
       '<div class="pub">'+esc(p.published||'')+cmt+'</div>'+
-      (behind?'':(
-        '<div class="toggles">'+
-          (p.title_ja||hasJaAbs ? '<button class="tg" data-act="lang">'+(isJa?'原文を見る':'日本語')+'</button>':'')+
-          (hasJaAbs?'':'<button class="tg on" data-act="translate-abs">本文を翻訳</button>')+
-        '</div>'))+
+      (behind||hasJaAbs?'':'<div class="toggles"><button class="tg on" data-act="translate-abs">本文を翻訳</button></div>')+
       '<div class="abs">'+esc(abs)+'</div>'+
       '<div class="links"><a class="lk" href="'+esc(safeUrl(p.abs_url))+'" target="_blank" rel="noreferrer">abs</a>'+
         '<a class="lk" href="'+esc(safeUrl(p.pdf_url))+'" target="_blank" rel="noreferrer">PDF</a></div>'+
@@ -292,7 +286,6 @@ async function translateAbstract(p, btn){
     p.abstract_ja = data.text_ja;
     absJa[p.id] = data.text_ja;
     save(LS.absja, absJa);
-    lang = 'ja';
     renderStack();
   }catch(e){
     btn.disabled = false;
@@ -320,7 +313,6 @@ function renderStack(){
   topEl.querySelectorAll('.tg').forEach(b=>{
     b.onclick=(e)=>{ e.stopPropagation();
       const a=b.getAttribute('data-act');
-      if(a==='lang'){ lang = (lang==='ja'?'en':'ja'); renderStack(); }
       if(a==='translate-abs'){ translateAbstract(top, b); }
     };
   });

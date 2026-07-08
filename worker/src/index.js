@@ -15,14 +15,21 @@ const RATE_LIMIT_MAX = 20;          // 同一IPからこのWindow内に許可す
 const MAX_TEXT_LEN = 6000;          // アブスト1本の想定上限より十分大きい安全マージン
 const ARXIV_ID_RE = /^\d{4}\.\d{4,5}$/;
 
+// ホスト名は大文字小文字を区別しないため、比較前に正規化する
+// （ブラウザが送るOriginヘッダーは常に小文字だが、設定値の書き間違いを吸収するため両側を正規化する）
+function sameOrigin(a, b){
+  return !!a && !!b && a.toLowerCase() === b.toLowerCase();
+}
+
 function corsHeaders(origin, allowedOrigin){
   const h = {
     'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Vary': 'Origin',
   };
-  if(allowedOrigin && origin === allowedOrigin){
-    h['Access-Control-Allow-Origin'] = allowedOrigin;
+  if(sameOrigin(origin, allowedOrigin)){
+    // ブラウザが送ってきたOriginをそのまま返す（設定値と大文字小文字が違っても一致として扱うため）
+    h['Access-Control-Allow-Origin'] = origin;
   }
   return h;
 }
@@ -126,7 +133,7 @@ export default {
     }
 
     // 許可オリジン以外は拒否（CORSヘッダも付けないので、ブラウザ側でも二重に弾かれる）
-    if(env.ALLOWED_ORIGIN && origin !== env.ALLOWED_ORIGIN){
+    if(env.ALLOWED_ORIGIN && !sameOrigin(origin, env.ALLOWED_ORIGIN)){
       return json(403, { error: 'forbidden_origin' });
     }
 
