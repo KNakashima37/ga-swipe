@@ -142,6 +142,7 @@ let absJa = load(LS.absja, {});      // { [id]: 翻訳済みアブスト } ワ�
 let history = [];
 let view = 'stack';
 let total = 0;
+let absOriginalView = null;  // 翻訳済みアブストで「原文を見る」を選んでいる論文id（1件のみ・カードが変われば自然に無効化）
 
 function load(k, def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def; }catch(e){ return def; } }
 function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
@@ -245,18 +246,22 @@ function updateHeader(){
 function cardHTML(p, behind){
   const title = p.title_ja || p.title;
   const hasJaAbs = !!p.abstract_ja;
-  const abs = hasJaAbs ? p.abstract_ja : p.abstract;
+  const showingOriginal = hasJaAbs && absOriginalView === p.id;
+  const abs = (hasJaAbs && !showingOriginal) ? p.abstract_ja : p.abstract;
   const cross = (p.cross||[]).map(c=>'<span class="xcat">'+esc(c)+'</span>').join('');
   const auth = (p.authors||[]).slice(0,3).join(', ') + ((p.authors||[]).length>3?' ほか':'');
   const enttl = p.title_ja ? '<div class="ttl-en">'+esc(p.title)+'</div>' : '';
   const cmt = p.comment ? ' · '+esc(p.comment) : '';
+  const toggleBtn = hasJaAbs
+    ? '<button class="tg" data-act="toggle-abs">'+(showingOriginal?'日本語訳を見る':'原文を見る')+'</button>'
+    : '<button class="tg on" data-act="translate-abs">本文を翻訳</button>';
   return ''+
     '<div class="card'+(behind?' behind':'')+'">'+
       '<div class="cbadges"><span class="pcat">'+esc(p.primary||'')+'</span>'+cross+'<span class="cid">'+esc(p.id)+'</span></div>'+
       '<div class="ttl">'+esc(title)+'</div>'+enttl+
       '<div class="auth">'+esc(auth)+'</div>'+
       '<div class="pub">'+esc(p.published||'')+cmt+'</div>'+
-      (behind||hasJaAbs?'':'<div class="toggles"><button class="tg on" data-act="translate-abs">本文を翻訳</button></div>')+
+      (behind?'':'<div class="toggles">'+toggleBtn+'</div>')+
       '<div class="abs">'+esc(abs)+'</div>'+
       '<div class="links"><a class="lk" href="'+esc(safeUrl(p.abs_url))+'" target="_blank" rel="noreferrer">abs</a>'+
         '<a class="lk" href="'+esc(safeUrl(p.pdf_url))+'" target="_blank" rel="noreferrer">PDF</a></div>'+
@@ -314,6 +319,7 @@ function renderStack(){
     b.onclick=(e)=>{ e.stopPropagation();
       const a=b.getAttribute('data-act');
       if(a==='translate-abs'){ translateAbstract(top, b); }
+      if(a==='toggle-abs'){ absOriginalView = (absOriginalView===top.id) ? null : top.id; renderStack(); }
     };
   });
   $('#undo').onclick = undo;
