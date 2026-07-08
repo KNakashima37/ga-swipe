@@ -54,19 +54,66 @@ def load_json(path, fallback):
         return fallback
 
 
+def too_few_results(n_papers, days, min_results):
+    """--days 指定の定期取得で件数が閾値未満なら True（arXiv API 不調の疑い）。
+    取得窓が3日以上あれば astro-ph.GA の新着が閾値を下回ることは通常ないため、
+    この場合は成果物を更新せず異常終了させる（空の latest.json で上書きしない）。"""
+    return (days is not None and days >= 3
+            and min_results > 0 and n_papers < min_results)
+
+
+def merge_seen_ids(old_ids, new_ids, cap=3000):
+    """既出IDリストに new_ids を追記し、古い方から捨てて cap 件に保つ（順序を保持）。"""
+    seen = set(old_ids)
+    merged = list(old_ids)
+    for i in new_ids:
+        if i not in seen:
+            seen.add(i)
+            merged.append(i)
+    return merged[-cap:]
+
+
 def save_json(path, obj):
+    # 一時ファイルに書いてから os.replace で差し替える（中断時に元ファイルを壊さない）
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, path)
 
 
 # --------------------------------------------------------------------------
 # arXiv 取得
 # --------------------------------------------------------------------------
-def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
-    """category の論文を submittedDate 降順で取得し、published >= since_dt のものを返す。"""
+def _fetch_page(url, ua, tries=3, wait=5.0):
+    """arXiv API から1ページ取得。一時的な失敗（HTTPエラー・タイムアウト・空応答）は
+    wait 秒あけて最大 tries 回まで再試行する（arXiv の3秒間隔の要請より長い間隔）。
+    再試行しても空のままなら [] を返し、エラーのままなら例外を投げる。"""
     import feedparser  # 必須依存。ここで import して未導入時に分かりやすく落とす。
 
+    last_err = None
+    for attempt in range(tries):
+        if attempt:
+            print(f"[warn] arXiv 応答不良のため再試行 {attempt}/{tries - 1} …", file=sys.stderr)
+            time.sleep(wait)
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": ua})
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                raw = resp.read()
+        except Exception as ex:
+            last_err = ex
+            continue
+        entries = feedparser.parse(raw).entries
+        if entries:
+            return entries
+        # 空応答: arXiv API は一時的に空を返すことがある → 再試行
+    if last_err is not None:
+        raise last_err
+    return []
+
+
+def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
+    """category の論文を submittedDate 降順で取得し、published >= since_dt のものを返す。"""
     ua = f"ga-swipe/0.1 (mailto:{contact})"
     out, start = [], 0
     while len(out) < max_results:
@@ -78,13 +125,9 @@ def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
             "max_results": min(page_size, max_results - len(out)),
         }
         url = f"{ARXIV_API}?{urllib.parse.urlencode(params)}"
-        req = urllib.request.Request(url, headers={"User-Agent": ua})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            raw = resp.read()
-        feed = feedparser.parse(raw)
-        entries = feed.entries
+        entries = _fetch_page(url, ua)
         if not entries:
-            break
+            break  # リトライ後も空 → 結果の末尾に達したと判断
 
         stop = False
         for e in entries:
@@ -96,8 +139,10 @@ def fetch_arxiv(category, since_dt, max_results, contact, page_size=100):
                 stop = True
                 break
             out.append(p)
-        if stop or len(entries) < params["max_results"]:
+        if stop:
             break
+        # 要求より短いページでも打ち切らない（arXiv API は途中のページを一時的に
+        # 短く返すことがある）。末尾かどうかは次の要求が空かどうかで判定する。
         start += len(entries)
         time.sleep(3.0)  # arXiv への礼儀
 
@@ -337,7 +382,7 @@ def render_html(papers, meta):
     return f"""<!doctype html><html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>astro-ph.GA digest</title>
 <script>window.MathJax={{tex:{{inlineMath:[['$','$'],['\\\\(','\\\\)']],displayMath:[['$$','$$'],['\\\\[','\\\\]']]}},options:{{skipHtmlTags:['script','noscript','style','textarea','pre']}}}};</script>
-<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
 <style>{css}</style></head><body>
 <h1>astro-ph.GA 新着ダイジェスト</h1>
 <div class="meta">{meta['generated']} · カテゴリ {meta['category']} · {meta['since']} 以降 · 翻訳 {meta['engine']} · 新着 {len(papers)} 件</div>
@@ -357,6 +402,9 @@ def main():
     ap.add_argument("--overlap-days", type=float, default=1.0,
                     help="前回以降に少し重ねて取得しseen-idで重複排除（取りこぼし防止）")
     ap.add_argument("--max", type=int, default=200, help="取得上限")
+    ap.add_argument("--min-results", type=int, default=10,
+                    help="--days が3日以上のとき、取得がこの件数未満なら異常終了する"
+                         "（API不調時に空データで上書きしない保険。0で無効）")
     ap.add_argument("--limit", type=int, default=None,
                     help="翻訳する件数の上限（無料枠の節約／先頭から N 件のみ訳す）")
     ap.add_argument("--title-only", action="store_true",
@@ -398,6 +446,10 @@ def main():
     print(f"取得: cat:{args.category} / {since.strftime('%Y-%m-%d %H:%M')}Z 以降 …", file=sys.stderr)
     papers = fetch_arxiv(args.category, since, args.max, args.contact)
 
+    if too_few_results(len(papers), args.days, args.min_results):
+        sys.exit(f"エラー: 取得が {len(papers)} 件しかありません（閾値 {args.min_results} 件）。"
+                 "arXiv API の不調とみなして中断します（出力ファイルは更新されません）。")
+
     if not args.ignore_seen:
         papers = [p for p in papers if p["id"] not in seen_ids]
     print(f"新着 {len(papers)} 件", file=sys.stderr)
@@ -422,7 +474,7 @@ def main():
 
     # 状態更新
     state["last_run"] = now.isoformat()
-    state["seen_ids"] = list(seen_ids | {p["id"] for p in papers})[-3000:]
+    state["seen_ids"] = merge_seen_ids(state.get("seen_ids", []), [p["id"] for p in papers])
     save_json(state_path, state)
     save_json(cache_path, cache)
 

@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <title>GA-Swipe</title>
 <script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},options:{skipHtmlTags:['script','noscript','style','textarea','pre']}};</script>
-<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
 <style>
   :root{
     --bg:#0b1020; --panel:#141b30; --panel2:#1b2440; --line:#2a3656;
@@ -154,9 +154,20 @@ function setData(papers){
 async function tryAutoLoad(){
   try{
     const r = await fetch('./latest.json', {cache:'no-store'});
-    if(r.ok){ setData(await r.json()); return true; }
+    if(r.ok){ setData(await r.json()); pruneRead(); return true; }
   }catch(e){}
   return false;
+}
+// 既読ID(gaswipe_read)のうち、現在の配信データに無いもの＝7日窓から出て
+// 二度と配信されない論文のIDを削除し、localStorage の無限成長を防ぐ。
+// 保存リスト(gaswipe_kept)には一切触れない。手動ファイル読み込み時は呼ばない
+// （古いJSONを開いた場合に現行の既読が消えるのを防ぐため、自動読み込み成功時のみ）。
+function pruneRead(){
+  if(!ALL.length) return;
+  const current = new Set(ALL.map(p=>p.id));
+  const before = read.size;
+  read = new Set([...read].filter(id=>current.has(id)));
+  if(read.size !== before) save(LS.read, [...read]);
 }
 $('#file').addEventListener('change', (e)=>{
   const f = e.target.files[0]; if(!f) return;
@@ -173,20 +184,20 @@ $('#btn-reset').onclick = ()=>{
 };
 
 function commit(action){
+  animating = false;
   const p = QUEUE.shift(); if(!p) return;
   read.add(p.id); save(LS.read, [...read]);
   const wasKept = kept.some(x=>x.id===p.id);
   if(action!=='skip' && !wasKept){ kept.push(p); save(LS.kept, kept); }
-  if(action==='open'){ window.open(p.abs_url, '_blank'); }
   history.push({p, action, addedKept: (action!=='skip' && !wasKept)});
   render();
 }
 function undo(){
+  if(animating) return;                            // 仕分けアニメーション中は無効
   const h = history.pop(); if(!h) return;
   read.delete(h.p.id); save(LS.read, [...read]);
   if(h.addedKept){ kept = kept.filter(x=>x.id!==h.p.id); save(LS.kept, kept); }
   QUEUE.unshift(h.p);
-  if(view==='done') view='stack';
   render();
 }
 
@@ -220,12 +231,14 @@ function cardHTML(p, behind){
           (hasJaAbs?'':'<button class="tg on" data-act="trans">arXivで開いて翻訳</button>')+
         '</div>'))+
       '<div class="abs">'+esc(abs)+'</div>'+
-      '<div class="links"><a class="lk" href="'+p.abs_url+'" target="_blank" rel="noreferrer">abs</a>'+
-        '<a class="lk" href="'+p.pdf_url+'" target="_blank" rel="noreferrer">PDF</a></div>'+
+      '<div class="links"><a class="lk" href="'+esc(safeUrl(p.abs_url))+'" target="_blank" rel="noreferrer">abs</a>'+
+        '<a class="lk" href="'+esc(safeUrl(p.pdf_url))+'" target="_blank" rel="noreferrer">PDF</a></div>'+
       (behind?'':'<div class="overlay ov-keep" style="opacity:0">気になる ↗</div><div class="overlay ov-skip" style="opacity:0">↖ 見送り</div>')+
     '</div>';
 }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+// 手動読み込みした JSON に javascript: URL 等が混ざっても実行されないようにする
+function safeUrl(u){ u=String(u==null?'':u); return /^https?:\/\//i.test(u) ? u : '#'; }
 
 function renderStack(){
   const top = QUEUE[0], next = QUEUE[1];
@@ -247,13 +260,13 @@ function renderStack(){
     b.onclick=(e)=>{ e.stopPropagation();
       const a=b.getAttribute('data-act');
       if(a==='lang'){ lang = (lang==='ja'?'en':'ja'); renderStack(); }
-      if(a==='trans'){ window.open(top.abs_url,'_blank'); }
+      if(a==='trans'){ window.open(safeUrl(top.abs_url),'_blank'); }
     };
   });
   $('#undo').onclick = undo;
   m.querySelectorAll('.controls .cbtn').forEach(b=> b.onclick = ()=>{
     const a=b.getAttribute('data-a');
-    if(a==='open'){ window.open(top.abs_url,'_blank'); return; }  // arXivを開くだけ（仕分けはしない）
+    if(a==='open'){ window.open(safeUrl(top.abs_url),'_blank'); return; }  // arXivを開くだけ（仕分けはしない）
     fling(topEl, a);
   });
   attachDrag(topEl);
@@ -265,8 +278,10 @@ function ctrl(a,label,color,icon,size){
 }
 
 let drag=null;
+let animating=false;   // カード仕分けアニメーション中（多重 commit を防ぐ）
 function attachDrag(el){
   el.addEventListener('pointerdown', (e)=>{
+    if(animating) return;                         // 仕分け確定待ちの間は次の操作を受けない
     if(e.target.closest('button, a')) return;     // ボタン/リンクのタップは奪わない
     drag={x0:e.clientX, y0:e.clientY, dx:0, dy:0, locked:false, id:e.pointerId};
     // ここではキャプチャしない（縦スクロールを邪魔しないため）
@@ -300,10 +315,11 @@ function attachDrag(el){
   el.addEventListener('pointercancel', end);
 }
 function fling(el, action){
+  if(animating) return;                            // 連打で見ていない次のカードまで仕分けされるのを防ぐ
+  animating = true;
   el.style.transition='transform .24s ease-out';
   if(action==='keep') el.style.transform='translate(600px,0) rotate(22deg)';
-  else if(action==='skip') el.style.transform='translate(-600px,0) rotate(-22deg)';
-  else el.style.transform='translate(0,-700px)';
+  else el.style.transform='translate(-600px,0) rotate(-22deg)';
   setTimeout(()=>commit(action), 230);
 }
 
@@ -328,8 +344,8 @@ function renderList(){
   const items = kept.map(p=>
     '<div class="litem"><div class="cid">'+esc(p.id)+' · '+esc(p.primary||'')+'</div>'+
     '<div class="lt">'+esc(p.title_ja||p.title)+'</div><div class="le">'+esc(p.title)+'</div>'+
-    '<div class="links" style="margin-top:8px"><a class="lk" href="'+p.abs_url+'" target="_blank" rel="noreferrer">abs</a>'+
-    '<a class="lk" href="'+p.pdf_url+'" target="_blank" rel="noreferrer">PDF</a></div></div>').join('');
+    '<div class="links" style="margin-top:8px"><a class="lk" href="'+esc(safeUrl(p.abs_url))+'" target="_blank" rel="noreferrer">abs</a>'+
+    '<a class="lk" href="'+esc(safeUrl(p.pdf_url))+'" target="_blank" rel="noreferrer">PDF</a></div></div>').join('');
   m.innerHTML='<div class="list"><div class="row"><h3>気になる ('+kept.length+')</h3>'+
     '<button class="ghost" id="l-back">スワイプに戻る</button></div>'+
     (kept.length? '<div class="scroll">'+items+'</div>'+
@@ -356,7 +372,7 @@ function copy(text, sel, label){
 
 function render(){
   if(view==='list') return renderList();
-  if(QUEUE.length===0 && total>=0) return renderDone();
+  if(QUEUE.length===0) return renderDone();
   renderStack();
 }
 

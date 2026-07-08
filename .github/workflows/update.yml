@@ -31,7 +31,11 @@ jobs:
           python-version: '3.11'
 
       - name: Install deps
-        run: pip install feedparser deepl
+        # バージョン固定（最新版の破壊的変更で日次ジョブが突然壊れるのを防ぐ）
+        run: pip install "feedparser==6.0.12" "deepl==1.30.0"
+
+      - name: Run tests
+        run: python -m unittest discover -s tests
 
       - name: Fetch + translate (titles only)
         env:
@@ -43,10 +47,22 @@ jobs:
           python ga_fetch.py --engine deepl --title-only --days 7 --ignore-seen
           cp ga_swipe/out/latest.json latest.json
 
+      - name: Validate output before commit
+        # 二重ガード: 万一異常に少ないデータが生成されても配信前に止める
+        # （スマホ側は latest.json が空だとカードが全部消えるため）
+        run: |
+          python - <<'EOF'
+          import json
+          d = json.load(open("latest.json"))
+          assert isinstance(d, list) and len(d) >= 10, f"latest.json: {len(d)} entries (< 10)"
+          print(f"latest.json OK: {len(d)} entries")
+          EOF
+
       - name: Commit updated data
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add latest.json ga_swipe/cache.json
           git commit -m "auto: update astro-ph.GA digest" || echo "no changes"
+          git pull --rebase origin main   # ジョブ実行中に手動pushがあっても衝突させない
           git push
