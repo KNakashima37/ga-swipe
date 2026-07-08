@@ -119,6 +119,7 @@
   <main id="main"></main>
 
   <input type="file" id="file" accept=".json,application/json">
+  <input type="file" id="backup-file" accept=".json,application/json">
 </div>
 
 <script>
@@ -197,7 +198,7 @@ function renderUsage(d){
   const el = $('#usage');
   if(!d || typeof d.character_count!=='number' || typeof d.character_limit!=='number') return;
   const pct = d.character_limit ? (d.character_count/d.character_limit*100) : 0;
-  el.textContent = '使用量: '+d.character_count.toLocaleString()+' / '+d.character_limit.toLocaleString()+'字（今月）';
+  el.textContent = 'DeepL API使用量: '+d.character_count.toLocaleString()+' / '+d.character_limit.toLocaleString()+'字（今月）';
   el.classList.remove('hidden');
   el.classList.toggle('warn', pct>=80);
 }
@@ -209,6 +210,54 @@ $('#file').addEventListener('change', (e)=>{
   fr.readAsText(f);
 });
 $('#btn-load').onclick = ()=> $('#file').click();
+
+// --- 保存リスト(kept)・既読(read)のバックアップ書き出し/読み込み ---
+// ホーム画面アイコンの作り直し等でlocalStorageが分離した場合の復元用。
+// Markdown/BibTeXコピーとは別物（あちらは他ツール連携用の書き出し専用フォーマット）。
+function exportBackup(){
+  const data = { kept, read: [...read], exported_at: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'gaswipe-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+// 現在のkept/readに追加マージする（上書きしない。同じIDは重複追加しない）
+function applyBackup(data){
+  const importedKept = Array.isArray(data && data.kept) ? data.kept : [];
+  const importedRead = Array.isArray(data && data.read) ? data.read : [];
+  const keptIds = new Set(kept.map(p=>p.id));
+  let addedKept = 0;
+  importedKept.forEach(p=>{
+    if(p && typeof p.id === 'string' && !keptIds.has(p.id)){
+      kept.push(p); keptIds.add(p.id); addedKept++;
+    }
+  });
+  const beforeReadSize = read.size;
+  importedRead.forEach(id=>{ if(typeof id === 'string') read.add(id); });
+  const addedRead = read.size - beforeReadSize;
+  save(LS.kept, kept);
+  save(LS.read, [...read]);
+  if(ALL.length) QUEUE = ALL.filter(p => !read.has(p.id));
+  return {addedKept, addedRead};
+}
+$('#backup-file').addEventListener('change', (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const fr = new FileReader();
+  fr.onload = ()=>{
+    try{
+      const {addedKept, addedRead} = applyBackup(JSON.parse(fr.result));
+      alert('保存 '+addedKept+'件・既読 '+addedRead+'件を取り込みました');
+      render();
+    }catch(err){ alert('バックアップを読み込めませんでした'); }
+  };
+  fr.readAsText(f);
+  e.target.value = '';  // 同じファイルを選び直しても change が発火するようにする
+});
 $('#btn-list').onclick = ()=>{ view = (view==='list'?'stack':'list'); render(); };
 $('#btn-reset').onclick = ()=>{
   if(!confirm('既読と保存をすべて消去しますか？')) return;
@@ -407,6 +456,7 @@ function renderList(){
     '<a class="lk" href="'+esc(safeUrl(p.pdf_url))+'" target="_blank" rel="noreferrer">PDF</a></div></div>').join('');
   m.innerHTML='<div class="list"><div class="row"><h3>気になる ('+kept.length+')</h3>'+
     '<button class="ghost" id="l-back">スワイプに戻る</button></div>'+
+    '<div class="exp"><button id="bk-export">バックアップを書き出す</button><button id="bk-import">バックアップを読み込む</button></div>'+
     (kept.length? '<div class="scroll">'+items+'</div>'+
       '<div class="exp"><button id="ex-md">Markdownでコピー</button><button id="ex-bib">BibTeXでコピー</button></div>'
       : '<div class="center"><p>まだ保存はありません。<br>右スワイプ（気になる）で溜まります。</p></div>')+
@@ -414,6 +464,8 @@ function renderList(){
   $('#l-back').onclick=()=>{ view='stack'; render(); };
   if($('#ex-md')) $('#ex-md').onclick=()=>copy(kept.map(p=>'- ['+p.title+']('+p.abs_url+') — '+(p.authors||[]).join(', ')+' ('+p.id+')').join('\n'),'#ex-md','Markdownでコピー');
   if($('#ex-bib')) $('#ex-bib').onclick=()=>copy(kept.map(bibtex).join('\n\n'),'#ex-bib','BibTeXでコピー');
+  $('#bk-export').onclick = exportBackup;
+  $('#bk-import').onclick = ()=> $('#backup-file').click();
   if(window.MathJax) typeset(m);
   updateHeader();
 }
