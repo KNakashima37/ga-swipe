@@ -289,6 +289,19 @@ class TestSaveJson(unittest.TestCase):
             ga_fetch.save_json(path, {"k": "v"})
             self.assertEqual(ga_fetch.load_json(path, None), {"k": "v"})
 
+    def test_bare_filename_without_directory(self):
+        # ga_fetch.py --usage-out usage.json のように、ディレクトリを含まない
+        # 相対ファイル名を渡した場合に os.makedirs('') で落ちないこと
+        # （実際にActions上でこの形で失敗していた回帰テスト）
+        with tempfile.TemporaryDirectory() as d:
+            cwd = os.getcwd()
+            os.chdir(d)
+            try:
+                ga_fetch.save_json("usage.json", {"k": "v"})
+                self.assertEqual(ga_fetch.load_json("usage.json", None), {"k": "v"})
+            finally:
+                os.chdir(cwd)
+
     def test_interrupted_write_keeps_original(self):
         # 書き込み途中で落ちても既存ファイルが破損しないこと（アトミック性）
         from unittest import mock

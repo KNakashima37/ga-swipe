@@ -75,7 +75,11 @@ def merge_seen_ids(old_ids, new_ids, cap=3000):
 
 def save_json(path, obj):
     # 一時ファイルに書いてから os.replace で差し替える（中断時に元ファイルを壊さない）
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # path がディレクトリ無しの相対ファイル名（例: "usage.json"）だと dirname が
+    # 空文字列になり、os.makedirs('') は例外になるためスキップする
+    dirname = os.path.dirname(path)
+    if dirname:
+        os.makedirs(dirname, exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(obj, f, ensure_ascii=False, indent=2)
