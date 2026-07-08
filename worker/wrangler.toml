@@ -2,9 +2,8 @@ name = "ga-swipe-translate"
 main = "src/index.js"
 compatibility_date = "2024-09-23"
 
-# GitHub Pages のオリジンに合わせて書き換える（例: https://<ユーザー名>.github.io）
 [vars]
-ALLOWED_ORIGIN = "https://<your-username>.github.io"
+ALLOWED_ORIGIN = "https://KNakashima37.github.io"
 
 kv_namespaces = [
   { binding = "TRANSLATE_CACHE", id = "492b55f67ddd4c239bf54921e2dd0b7d" },
