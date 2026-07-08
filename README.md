@@ -69,9 +69,10 @@ DeepLキーをスマホ側のコードに置けないため、`worker/` に Clou
 3. KV Namespace を2つ作成する。
    ```bash
    cd worker
-   wrangler kv namespace create TRANSLATE_CACHE
-   wrangler kv namespace create RATE_LIMIT_KV
+   npx wrangler kv:namespace create TRANSLATE_CACHE
+   npx wrangler kv:namespace create RATE_LIMIT_KV
    ```
+   （wrangler 4系を使っている場合は `kv namespace create`（コロンなし）表記になる）
    出力された `id` を `worker/wrangler.toml` の `kv_namespaces` にそれぞれ貼り付ける。
 4. `worker/wrangler.toml` の `ALLOWED_ORIGIN` を自分の GitHub Pages のオリジン（例: `https://<ユーザー名>.github.io`）に書き換える。
 5. DeepL APIキーを Worker の secret として登録する（このキーはリポジトリやアプリ側には一切書かない）。
