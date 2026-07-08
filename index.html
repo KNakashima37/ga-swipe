@@ -38,6 +38,8 @@
   .meta{display:flex; justify-content:space-between; font:11px/1.4 ui-monospace,monospace; color:var(--sub); margin-top:8px}
   .bar{height:3px; background:var(--line); border-radius:3px; margin-top:8px; overflow:hidden}
   .bar>i{display:block; height:100%; background:var(--amber); width:0; transition:width .3s}
+  .usage{font:11px/1.4 ui-monospace,monospace; color:var(--sub); margin-top:6px}
+  .usage.warn{color:var(--amber); font-weight:700}
   main{flex:1; display:flex; flex-direction:column; position:relative; padding:12px 12px 0; overflow:hidden; min-height:0}
   .stack{position:relative; flex:1; min-height:0}
   .card{position:absolute; inset:0; background:var(--panel); border:1px solid var(--line);
@@ -111,6 +113,7 @@
     </div>
     <div class="meta"><span id="m-left">—</span><span id="m-count">処理 0 ・保存 0</span></div>
     <div class="bar"><i id="bar"></i></div>
+    <div class="usage hidden" id="usage"></div>
   </header>
 
   <main id="main"></main>
@@ -127,12 +130,15 @@ const ICON = {
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7"/></svg>',
 };
-const LS = { read:'gaswipe_read', kept:'gaswipe_kept' };
+const LS = { read:'gaswipe_read', kept:'gaswipe_kept', absja:'gaswipe_absja' };
+// Cloudflare Worker のエンドポイント（本文ワンタップ翻訳用）。デプロイ後に実際のURLへ書き換える（README参照）
+const WORKER_URL = 'https://ga-swipe-translate.knakashima37.workers.dev';
 
 let ALL = [];
 let QUEUE = [];
 let read = new Set(load(LS.read, []));
 let kept = load(LS.kept, []);        // array of paper objects
+let absJa = load(LS.absja, {});      // { [id]: 翻訳済みアブスト } ワンタップ翻訳のキャッシュ
 let history = [];
 let lang = 'ja';
 let view = 'stack';
@@ -143,6 +149,8 @@ function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){
 
 function setData(papers){
   ALL = Array.isArray(papers) ? papers : [];
+  // 端末に保存済みのワンタップ翻訳結果があれば適用（DeepLへの再翻訳・再課金を避ける）
+  ALL.forEach(p=>{ if(!p.abstract_ja && absJa[p.id]) p.abstract_ja = absJa[p.id]; });
   total = ALL.length;
   QUEUE = ALL.filter(p => !read.has(p.id));
   history = [];
@@ -154,7 +162,7 @@ function setData(papers){
 async function tryAutoLoad(){
   try{
     const r = await fetch('./latest.json', {cache:'no-store'});
-    if(r.ok){ setData(await r.json()); pruneRead(); return true; }
+    if(r.ok){ setData(await r.json()); pruneRead(); pruneAbsJa(); return true; }
   }catch(e){}
   return false;
 }
@@ -169,6 +177,31 @@ function pruneRead(){
   read = new Set([...read].filter(id=>current.has(id)));
   if(read.size !== before) save(LS.read, [...read]);
 }
+// gaswipe_absja も同様に、配信データから消えた論文IDの翻訳キャッシュを掃除する
+function pruneAbsJa(){
+  if(!ALL.length) return;
+  const current = new Set(ALL.map(p=>p.id));
+  const before = Object.keys(absJa).length;
+  Object.keys(absJa).forEach(id=>{ if(!current.has(id)) delete absJa[id]; });
+  if(Object.keys(absJa).length !== before) save(LS.absja, absJa);
+}
+// --- DeepL使用量表示（usage.json はGitHub Actionsが日次で書き出す。無くても動作に影響しない） ---
+async function loadUsage(){
+  try{
+    const r = await fetch('./usage.json', {cache:'no-store'});
+    if(!r.ok) return;
+    renderUsage(await r.json());
+  }catch(e){}
+}
+function renderUsage(d){
+  const el = $('#usage');
+  if(!d || typeof d.character_count!=='number' || typeof d.character_limit!=='number') return;
+  const pct = d.character_limit ? (d.character_count/d.character_limit*100) : 0;
+  el.textContent = '使用量: '+d.character_count.toLocaleString()+' / '+d.character_limit.toLocaleString()+'字（今月）';
+  el.classList.remove('hidden');
+  el.classList.toggle('warn', pct>=80);
+}
+
 $('#file').addEventListener('change', (e)=>{
   const f = e.target.files[0]; if(!f) return;
   const fr = new FileReader();
@@ -228,7 +261,7 @@ function cardHTML(p, behind){
       (behind?'':(
         '<div class="toggles">'+
           (p.title_ja||hasJaAbs ? '<button class="tg" data-act="lang">'+(isJa?'原文を見る':'日本語')+'</button>':'')+
-          (hasJaAbs?'':'<button class="tg on" data-act="trans">arXivで開いて翻訳</button>')+
+          (hasJaAbs?'':'<button class="tg on" data-act="translate-abs">本文を翻訳</button>')+
         '</div>'))+
       '<div class="abs">'+esc(abs)+'</div>'+
       '<div class="links"><a class="lk" href="'+esc(safeUrl(p.abs_url))+'" target="_blank" rel="noreferrer">abs</a>'+
@@ -239,6 +272,34 @@ function cardHTML(p, behind){
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 // 手動読み込みした JSON に javascript: URL 等が混ざっても実行されないようにする
 function safeUrl(u){ u=String(u==null?'':u); return /^https?:\/\//i.test(u) ? u : '#'; }
+
+// アブスト本文のワンタップ翻訳。Cloudflare Worker経由でDeepLに投げ、
+// 結果は端末側(gaswipe_absja)にキャッシュして再タップ時は課金・再翻訳しない。
+async function translateAbstract(p, btn){
+  if(btn.disabled) return;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '翻訳中…';
+  try{
+    const r = await fetch(WORKER_URL + '/translate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({text: p.abstract, id: p.id}),
+    });
+    if(!r.ok) throw new Error('http '+r.status);
+    const data = await r.json();
+    if(!data.text_ja) throw new Error('empty response');
+    p.abstract_ja = data.text_ja;
+    absJa[p.id] = data.text_ja;
+    save(LS.absja, absJa);
+    lang = 'ja';
+    renderStack();
+  }catch(e){
+    btn.disabled = false;
+    btn.textContent = orig;
+    alert('翻訳に失敗しました。通信状態を確認してもう一度お試しください。');
+  }
+}
 
 function renderStack(){
   const top = QUEUE[0], next = QUEUE[1];
@@ -260,7 +321,7 @@ function renderStack(){
     b.onclick=(e)=>{ e.stopPropagation();
       const a=b.getAttribute('data-act');
       if(a==='lang'){ lang = (lang==='ja'?'en':'ja'); renderStack(); }
-      if(a==='trans'){ window.open(safeUrl(top.abs_url),'_blank'); }
+      if(a==='translate-abs'){ translateAbstract(top, b); }
     };
   });
   $('#undo').onclick = undo;
@@ -378,6 +439,7 @@ function render(){
 
 // 起動
 (async ()=>{ const ok = await tryAutoLoad(); if(!ok){ render(); } })();
+loadUsage();
 </script>
 </body>
 </html>

@@ -4,6 +4,7 @@
 実行方法（リポジトリのルートで）:
   python3 -m unittest discover -s tests -v
 """
+import datetime as dt
 import json
 import os
 import sys
@@ -298,6 +299,21 @@ class TestSaveJson(unittest.TestCase):
                 with self.assertRaises(OSError):
                     ga_fetch.save_json(path, {"k": "new"})
             self.assertEqual(ga_fetch.load_json(path, None), {"k": "old"})
+
+
+class TestUsageSnapshot(unittest.TestCase):
+    def test_computes_percent_and_formats_timestamp(self):
+        when = dt.datetime(2026, 7, 8, 21, 0, 0, tzinfo=ga_fetch.UTC)
+        snap = ga_fetch.usage_snapshot(123456, 500000, when)
+        self.assertEqual(snap["character_count"], 123456)
+        self.assertEqual(snap["character_limit"], 500000)
+        self.assertAlmostEqual(snap["percent"], 24.69, places=2)
+        self.assertEqual(snap["updated"], "2026-07-08T21:00:00Z")
+
+    def test_zero_limit_does_not_divide_by_zero(self):
+        when = dt.datetime(2026, 7, 8, tzinfo=ga_fetch.UTC)
+        snap = ga_fetch.usage_snapshot(0, 0, when)
+        self.assertEqual(snap["percent"], 0)
 
 
 class TestLoadJson(unittest.TestCase):

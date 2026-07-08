@@ -3,3 +3,5 @@ __pycache__/
 ga_swipe/out/
 ga_swipe/state.json
 *.json.tmp
+worker/node_modules/
+worker/.wrangler/

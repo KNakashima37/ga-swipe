@@ -249,6 +249,17 @@ class DeepLTranslator:
         return u.character.count, u.character.limit
 
 
+def usage_snapshot(count, limit, when):
+    """DeepL使用量をアプリ側(usage.json)へ配信する形に整形する。"""
+    pct = (count / limit * 100) if limit else 0
+    return {
+        "character_count": count,
+        "character_limit": limit,
+        "percent": round(pct, 2),
+        "updated": when.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+
+
 class ArgosTranslator:
     name = "argos"
 
@@ -417,6 +428,8 @@ def main():
     ap.add_argument("--selftest", action="store_true", help="ネット不要の自己テスト")
     ap.add_argument("--usage", action="store_true",
                     help="DeepL の文字数消費量を表示して終了（engine=deepl 用）")
+    ap.add_argument("--usage-out", default=None,
+                    help="DeepL の使用量(文字数/上限)をJSONファイルに書き出す（engine=deepl 用）")
     args = ap.parse_args()
 
     if args.selftest:
@@ -426,6 +439,8 @@ def main():
         c, lim = get_translator("deepl").usage()
         pct = (c / lim * 100) if lim else 0
         print(f"DeepL 使用量: {c:,} / {lim:,} 文字 ({pct:.1f}%)")
+        if args.usage_out:
+            save_json(args.usage_out, usage_snapshot(c, lim, dt.datetime.now(UTC)))
         return
 
     os.makedirs(args.workdir, exist_ok=True)
@@ -463,8 +478,10 @@ def main():
             c, lim = translator.usage()
             pct = (c / lim * 100) if lim else 0
             print(f"DeepL 使用量: {c:,} / {lim:,} 文字 ({pct:.1f}%)", file=sys.stderr)
-        except Exception:
-            pass
+            if args.usage_out:
+                save_json(args.usage_out, usage_snapshot(c, lim, now))
+        except Exception as ex:
+            print(f"[warn] 使用量取得に失敗しました: {ex}", file=sys.stderr)
 
     meta = {"generated": now.strftime("%Y-%m-%d %H:%M UTC"),
             "category": args.category, "since": since.strftime("%Y-%m-%d"),

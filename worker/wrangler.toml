@@ -1,0 +1,16 @@
+name = "ga-swipe-translate"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# kv_namespaces はトップレベルのキー。[vars] より前に置く
+# （[vars]より後ろに書くと、TOMLの仕様上そちらの中身として誤解釈される）
+kv_namespaces = [
+  { binding = "TRANSLATE_CACHE", id = "492b55f67ddd4c239bf54921e2dd0b7d" },
+  { binding = "RATE_LIMIT_KV", id = "66afbea0b0a9430b85a21bd11cf6ce1a" },
+]
+
+[vars]
+ALLOWED_ORIGIN = "https://KNakashima37.github.io"
+
+# DEEPL_API_KEY は secret のためここには書かない。
+# `wrangler secret put DEEPL_API_KEY` で登録する。

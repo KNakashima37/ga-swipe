@@ -44,7 +44,8 @@ jobs:
         run: |
           # 直近7日ぶんを毎回出力（スマホ側で既読を除外するので、数日空けても取りこぼさない）
           # 翻訳キャッシュ(cache.json)を使うので、新しいタイトルだけ翻訳＝無料枠をほぼ消費しない
-          python ga_fetch.py --engine deepl --title-only --days 7 --ignore-seen
+          # --usage-out で当月のDeepL使用量(usage.json)も同時に書き出す（APIキーはこの中にのみ渡り、成果物には含まれない）
+          python ga_fetch.py --engine deepl --title-only --days 7 --ignore-seen --usage-out usage.json
           cp ga_swipe/out/latest.json latest.json
 
       - name: Validate output before commit
@@ -53,9 +54,19 @@ jobs:
         run: |
           python - <<'EOF'
           import json
+          import os
+
           d = json.load(open("latest.json"))
           assert isinstance(d, list) and len(d) >= 10, f"latest.json: {len(d)} entries (< 10)"
           print(f"latest.json OK: {len(d)} entries")
+
+          # usage.json は DeepL API が一時的に落ちていると書き出されないことがあるため、
+          # 存在する場合のみ形を検証する（無ければ前回コミット分がそのまま残る＝配信は壊れない）
+          if os.path.exists("usage.json"):
+              u = json.load(open("usage.json"))
+              assert isinstance(u.get("character_count"), int), "usage.json: character_count が不正"
+              assert isinstance(u.get("character_limit"), int), "usage.json: character_limit が不正"
+              print(f"usage.json OK: {u['character_count']:,} / {u['character_limit']:,}")
           EOF
 
       - name: Commit updated data
@@ -63,6 +74,11 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add latest.json ga_swipe/cache.json
+          # usage.json はDeepL障害時に書き出されないことがあるため、存在するときだけ add する
+          # （-e が有効なので、無条件に add すると存在しない場合に latest.json のコミットまで止まる）
+          if [ -f usage.json ]; then
+            git add usage.json
+          fi
           git commit -m "auto: update astro-ph.GA digest" || echo "no changes"
           git pull --rebase origin main   # ジョブ実行中に手動pushがあっても衝突させない
           git push
