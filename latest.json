@@ -1962,26 +1962,6 @@
     "title_ja": "「より多く、より青く」：最も明るい「小さな赤い点」の周囲の銀河は、 $>3σ$ における対照銀河とは異なり、ブラックホールの種形成が同期して起こったことを示唆している"
   },
   {
-    "id": "2608.23673",
-    "version": "v2",
-    "title": "A simulation-based quality-control framework for the broad-line region radius-luminosity relation",
-    "abstract": "The broad-line region (BLR) radius-luminosity (R-L) relation underpins single-epoch black hole mass estimates in active galactic nuclei (AGN). The published Hβsample is heterogeneous in observational quality, and it remains unclear how much of its scatter is intrinsic rather than caused by systematics in lag recovery. We quantify the contribution of unreliable lag recovery to the observed scatter of the HβR-L relation and provide tools for quality control. We compile a publicly available database of reverberation mapping measurements for ~1200 AGN from 32 campaigns spanning more than three decades, including lags, luminosities, line widths, black hole masses, and observational metadata. We develop a simulation-based consistency framework in which damped random walk light curves are sampled according to each campaign's baseline, cadence, and signal-to-noise ratio, and lags are recovered with the interpolated cross-correlation function (ICCF). Comparing expected, reported, and simulation-retrieved lags defines a four-tier flagging scheme. We refit the R-L relation with UltraNest for progressively cleaner samples and construct consensus samples across three reference slopes to reduce model dependence. Of 248 Hβsources, ~40% show discrepancies between reported and simulation-retrieved lags, while ~5% show direct inconsistencies between expected and retrieved lags. Excluding flagged sources and correcting for model bias reduces the inferred intrinsic scatter from σ= 0.26^{+0.02}_{-0.01} dex to 0.11\\pm0.01 dex, with a corrected slope of α= 0.48\\pm0.02. Our results indicate that a substantial fraction of the observed HβR-L scatter arises from observational limitations and lag-recovery biases rather than intrinsic AGN diversity. The database, simulation code, and RM-Scout campaign-planning tool are publicly available.",
-    "authors": [
-      "Juri Wladimir Seib",
-      "Francisco Pozo Nuñez",
-      "Sarah Elena Ivana Bosman"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [],
-    "comment": "Accepted for publication in A&A, Updated the version to match language edited and final submitted version",
-    "published": "2026-08-24",
-    "updated": "2026-08-26",
-    "abs_url": "https://arxiv.org/abs/2608.23673",
-    "pdf_url": "https://arxiv.org/pdf/2608.23673",
-    "abstract_ja": "",
-    "title_ja": "広線領域における半径-光度関係のシミュレーションに基づく品質管理フレームワーク"
-  },
-  {
     "id": "2608.23672",
     "version": "v1",
     "title": "Spin inference with the Black Hole Explorer. I. Fisher information matrix forecast",
@@ -2003,6 +1983,26 @@
     "pdf_url": "https://arxiv.org/pdf/2608.23672",
     "abstract_ja": "",
     "title_ja": "「ブラックホール・エクスプローラー」を用いたスピン推定。I. フィッシャー情報行列の予測"
+  },
+  {
+    "id": "2608.23673",
+    "version": "v2",
+    "title": "A simulation-based quality-control framework for the broad-line region radius-luminosity relation",
+    "abstract": "The broad-line region (BLR) radius-luminosity (R-L) relation underpins single-epoch black hole mass estimates in active galactic nuclei (AGN). The published Hβsample is heterogeneous in observational quality, and it remains unclear how much of its scatter is intrinsic rather than caused by systematics in lag recovery. We quantify the contribution of unreliable lag recovery to the observed scatter of the HβR-L relation and provide tools for quality control. We compile a publicly available database of reverberation mapping measurements for ~1200 AGN from 32 campaigns spanning more than three decades, including lags, luminosities, line widths, black hole masses, and observational metadata. We develop a simulation-based consistency framework in which damped random walk light curves are sampled according to each campaign's baseline, cadence, and signal-to-noise ratio, and lags are recovered with the interpolated cross-correlation function (ICCF). Comparing expected, reported, and simulation-retrieved lags defines a four-tier flagging scheme. We refit the R-L relation with UltraNest for progressively cleaner samples and construct consensus samples across three reference slopes to reduce model dependence. Of 248 Hβsources, ~40% show discrepancies between reported and simulation-retrieved lags, while ~5% show direct inconsistencies between expected and retrieved lags. Excluding flagged sources and correcting for model bias reduces the inferred intrinsic scatter from σ= 0.26^{+0.02}_{-0.01} dex to 0.11\\pm0.01 dex, with a corrected slope of α= 0.48\\pm0.02. Our results indicate that a substantial fraction of the observed HβR-L scatter arises from observational limitations and lag-recovery biases rather than intrinsic AGN diversity. The database, simulation code, and RM-Scout campaign-planning tool are publicly available.",
+    "authors": [
+      "Juri Wladimir Seib",
+      "Francisco Pozo Nuñez",
+      "Sarah Elena Ivana Bosman"
+    ],
+    "primary": "astro-ph.GA",
+    "cross": [],
+    "comment": "Accepted for publication in A&A, Updated the version to match language edited and final submitted version",
+    "published": "2026-08-24",
+    "updated": "2026-08-26",
+    "abs_url": "https://arxiv.org/abs/2608.23673",
+    "pdf_url": "https://arxiv.org/pdf/2608.23673",
+    "abstract_ja": "",
+    "title_ja": "広線領域における半径-光度関係のシミュレーションに基づく品質管理フレームワーク"
   },
   {
     "id": "2608.23558",
@@ -2331,155 +2331,5 @@
     "pdf_url": "https://arxiv.org/pdf/2608.22231",
     "abstract_ja": "",
     "title_ja": "銀河の極における宇宙紫外線背景"
-  },
-  {
-    "id": "2608.22080",
-    "version": "v1",
-    "title": "[CII] as a global cold gas tracer in novel hydrodynamical simulations",
-    "abstract": "[CII] emission is a powerful tool for studying the gas content in galaxies, especially at early stages of evolution. Given its low excitation potential, the [CII] 158 μm line is the main coolant of neutral gas in photodissociation regions and giant molecular clouds, hence a tracer of all phases of the interstellar medium. However, there is no consensus on what is the nature of the gas traced by this emission. We aim to provide insights into the physics of the [CII] emission and predictions for future observations. We used four pre-prepared simulations performed with a version of p-gadget-3, which includes the krome chemistry package. We implemented a postprocessing semi-analytical model to simulate the [CII] emission. We analysed an isolated Milky Way-mass-size galaxy, and three merger configurations: a co-rotating, counter-rotating, and perpendicular major mergers of two Milky Way-mass-size galaxies. We reproduce fundamental relations such as the [CII] luminosity and the star formation rate, L[CII]-SFR relation, in which mergers show an extra component for the [CII] emission not traced by the star formation alone. During quiescent or starburst stages, galaxies deviate from the L[CII]-SFR relation. We find that [CII] is a robust tracer of molecular gas, as well as atomic gas in both cold and warm phases on a global scale. Our results indicate that around 50 per cent of the total [CII] emission is traced by molecular gas, while 30 to 40 per cent is traced by atomic and ionised hydrogen regardless of the configuration. Our findings suggest that the nature of the [CII] emission depends strongly on the evolutionary history of galaxies, in which mergers and starbursts act as more efficient drivers of [CII] emission through collision with molecular hydrogen.",
-    "authors": [
-      "Valentina P. Miranda",
-      "Patricia B. Tissera",
-      "Jorge González-López",
-      "Emanuel Sillero"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [],
-    "comment": "14 pages, 12 figures, revised version submitted to Astronomy and Astrophysics",
-    "published": "2026-08-22",
-    "updated": "2026-08-22",
-    "abs_url": "https://arxiv.org/abs/2608.22080",
-    "pdf_url": "https://arxiv.org/pdf/2608.22080",
-    "abstract_ja": "",
-    "title_ja": "[CII]を、新規流体力学シミュレーションにおける全球的な低温ガスのトレーサーとして"
-  },
-  {
-    "id": "2608.22069",
-    "version": "v1",
-    "title": "AstroBind: Machine learning prediction of binding energy distributions on interstellar water ice from geometric surface descriptors",
-    "abstract": "Binding energies on amorphous solid water regulate molecular desorption in molecular clouds and protoplanetary disks, but computing them from first principles across the heterogeneous binding sites of disordered ice surfaces is computationally prohibitive. We aim to develop a rapid, interpretable method for predicting binding energies on amorphous solid water that captures surface heterogeneity without requiring explicit electronic-structure calculations. We trained a machine-learning model using 27 geometric descriptors of the local ice-adsorbate environment. The model was trained on binding energies for 13 adsorbates on amorphous solid water clusters and evaluated through pooled leave-one-cluster-out validation across 15 ice surfaces. Its transferability was assessed on radical species excluded entirely from training. The model achieves a pooled leave-one-cluster-out coefficient of determination $R^2 = 0.90$ (the fraction of variance in the binding energies captured by the model, where 1 is a perfect fit), and a mean absolute error of 378 K across 15 ice surfaces. It also transfers to radical species withheld from training, with a pooled $R^2 = 0.79$, although its accuracy decreases when the unpaired electron contributes directly to the surface interaction. Our results demonstrate a route towards rapid, distribution-aware parameterisation of binding energies and desorption/diffusion rates in gas-grain astrochemical models, while preserving physical interpretability on heterogeneous ice surfaces.",
-    "authors": [
-      "Aneesa Ahmad",
-      "Catherine Walsh"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [
-      "astro-ph.IM"
-    ],
-    "comment": "Submitted to The Astrophysical Journal. Expressions of interest from potential reviewers with expertise at the intersection of machine learning and astrochemistry are welcome. All code and data will be publicly released upon acceptance",
-    "published": "2026-08-22",
-    "updated": "2026-08-22",
-    "abs_url": "https://arxiv.org/abs/2608.22069",
-    "pdf_url": "https://arxiv.org/pdf/2608.22069",
-    "abstract_ja": "",
-    "title_ja": "AstroBind：幾何学的表面記述子に基づく星間水氷の結合エネルギー分布の機械学習による予測"
-  },
-  {
-    "id": "2608.22051",
-    "version": "v1",
-    "title": "Particle acceleration and non-thermal broadband spectrum of extended shocked outflows in black hole binary V4641 Sgr - a galactic pevatron",
-    "abstract": "Stellar mass black holes accreting at a super-Eddington rate produce strong outflows and non-thermal radiation up to PeV energy. Recently, very high energy (VHE) emission was discovered from the environment of the galactic microquasar V4641 Sgr, which is known to experience super-Eddington outbursts. We present MHD simulations supplemented with a nonlinear kinetic Monte Carlo model that reproduces the observed radio, X-ray, and gamma-ray emission from the region over tens of parsecs surrounding V4641 Sgr. The reported multi-wavelength non-thermal emission can be explained as produced by PeV electrons accelerated by a system of strong shock waves created by the interaction between a narrow trans-relativistic polar jet and a quasi-spherical accretion-disk wind. The shock positions are associated with bright spots of the gamma-ray and X-ray radiation, whose spatial profiles can be tested with dedicated observations. The model predicts that a sizable fraction of the jet's kinetic energy is channeled into TeV-PeV protons, suggesting that such systems might be powerful sources of PeV-range cosmic rays during the accelerator activity cycle. In this model, the bow-tie shape structure discovered by MeerKAT in V4641 Sgr is associated with the radio emission from the termination surface of the quasi-spherical accretion-disk wind. The newly presented (from the SRG/eROSITA all-sky survey) and archival (INTEGRAL and Swift BAT) X-ray data are quantitatively consistent with the model, and simultaneously reproduce VHE measurements with H.E.S.S., HAWC, and LHAASO. Deeper X-ray observations will provide a test of the intermittent operation of the accelerator, in contrast with more persistent sources such as SS433/W50.",
-    "authors": [
-      "Andrei Bykov",
-      "Sergei Osipov",
-      "Vadim Romansky",
-      "Eugene Churazov",
-      "Ildar Khabibullin"
-    ],
-    "primary": "astro-ph.HE",
-    "cross": [
-      "astro-ph.GA",
-      "astro-ph.SR"
-    ],
-    "comment": "17 pages, 13 figures, in press",
-    "published": "2026-08-22",
-    "updated": "2026-08-22",
-    "abs_url": "https://arxiv.org/abs/2608.22051",
-    "pdf_url": "https://arxiv.org/pdf/2608.22051",
-    "abstract_ja": "",
-    "title_ja": "ブラックホール連星系V4641 Sgrにおける拡張ショック波流の粒子加速と非熱的広帯域スペクトル ― 銀河系ペバトロン ―"
-  },
-  {
-    "id": "2608.21978",
-    "version": "v1",
-    "title": "MIAO-ALMA: Shocks and Protostellar Outflows in 70 $μ$m-dark clumps with $L/M$ $<$ 1 $L_{\\odot}$/$M_{\\odot}$",
-    "abstract": "To investigate the initial conditions of high-mass star-forming regions, we use SiO (2-1) emission to trace early shock-related kinematics toward sixteen 70 $μ$m-dark and massive clumps with luminosity-to-mass ratios ($L/M$) $< 1\\,L_{\\odot}/M_{\\odot}$, as part of the Multiwavelength Line-Imaging Survey of the 70 $μ$m-dark and bright clouds (MIAO) project. Using ALMA observations at a spatial resolution of $\\sim$0.06 pc and a velocity resolution of 0.21 km s$^{-1}$, we identify a total of thirty-seven outflows with a variety of morphologies. Outflow parameters were derived by integrating the HCO$^+$ (1-0) line wings, excluding the quiescent dense core component traced by H$^{13}$CO$^+$ (1-0). We find that outflow masses and velocities show moderate positive correlations with the masses of their driving cores. Owing to the high sensitivity of our observations, which yield longer projected outflow lengths compared to previous studies, the derived outflow dynamical ages span $\\sim10^{3}$-$10^{5}$ yr. We detect six narrow-linewidth (0.6-1.4 km s$^{-1}$) and three broad ($>$ 2 km s$^{-1}$) SiO (2-1) features not associated with outflows driven by clearly identified protostars. Lacking coincident 3 mm dust continuum cores, their origins may be young outflows from undetected low-mass protostars, dissipating shocks, cloud-cloud collisions, or projection effects when the outflows lie close to the plane of the sky. The detection of these shocks and outflows in such extremely young environments demonstrates that protostellar activity has already begun.",
-    "authors": [
-      "Shuting Lin",
-      "Siyi Feng",
-      "Junzhi Wang",
-      "Shanghuo Li",
-      "Dan Miao",
-      "Zhi-Yu Zhang",
-      "Sheng-Yuan Liu",
-      "Nami Sakai",
-      "Fengwei Xu",
-      "Hauyu Baobab Liu",
-      "Henrik Beuther",
-      "Di Li",
-      "Qizhou Zhang",
-      "Tie Liu",
-      "Patricio Sanhueza",
-      "Olli Sipilä",
-      "Ken'ichi Tatematsu",
-      "Jaime E. Pineda",
-      "Xing Lu"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [
-      "astro-ph.SR"
-    ],
-    "comment": "21 pages, 6 figures. Accepted for publication in AJ",
-    "published": "2026-08-22",
-    "updated": "2026-08-22",
-    "abs_url": "https://arxiv.org/abs/2608.21978",
-    "pdf_url": "https://arxiv.org/pdf/2608.21978",
-    "abstract_ja": "",
-    "title_ja": "MIAO-ALMA： $μ$ mの暗黒塊における衝撃波と原始恒星流出（ $L/M$ 、 $<$ 、1、 $L_{\\odot}$ / $M_{\\odot}$ ）"
-  },
-  {
-    "id": "2608.21876",
-    "version": "v1",
-    "title": "Indirect evidence of the $2175\\,\\mathring{\\mathrm{A}}$ extinction bump within the dusty torus of SDSS J141945.50+524648.0",
-    "abstract": "We present a multi-wavelength study of the quasar SDSS J141945.50$+$524648.0 ($z=1.1599$), a member of the newly identified population of quasar-associated $2175\\,\\mathring{\\mathrm{A}}$ dust absorbers. Utilizing JWST/NIRCam observations from the SAPPHIRES survey and archival data, we analyze the prominent $2175\\,\\mathring{\\mathrm{A}}$ extinction bump detected in this object. The bump parameters are highly consistent with the Milky Way extinction curve, implying similar dust properties. Spectral analysis reveals a $\\mathrm{Mg\\,II}$ absorption doublet near the systemic velocity. Joint fitting of the $\\mathrm{Mg\\,II}$ and $\\mathrm{Fe\\,II}$ absorption lines favors a partial-covering model, yielding $C_{f,\\rm BEL}=0.11^{+0.12}_{-0.07}$. Together with the small velocity offset ($Δv\\approx96~{\\rm km\\,s^{-1}}$), these results favor an intrinsic absorber rather than an intervening system. Infrared SED modeling and double-peaked $\\mathrm{Pa\\,α}$ emission indicate consistent orientations of the dusty torus ($θ\\approx60^{+7}_{-8}$ deg) and accretion disk ($i=63.7^{+10.9}_{-7.8}$ deg), suggesting a rim-penetrating line of sight through the torus. This configuration naturally explains the infrared emission, continuum extinction, and associated $2175\\,\\mathring{\\mathrm{A}}$ bump, although a contribution from the host-galaxy ISM cannot be excluded. If associated with the torus, the carbonaceous carriers of the $2175\\,\\mathring{\\mathrm{A}}$ feature may survive the intense AGN radiation field through localized shielding in optically thick dusty clumps. These results highlight the role of viewing geometry and dust distribution in regulating dust survival in quasar environments.",
-    "authors": [
-      "Ze Li",
-      "Gaoyang Chen",
-      "Qifan Cui",
-      "Zheng Cai",
-      "Jianzhen Chen",
-      "Zhijian Luo",
-      "Chenggang Shu",
-      "Fengwu Sun",
-      "Hubing Xiao",
-      "Shaohua Zhang"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [],
-    "comment": "9 pages, 4 figures, 1 table. Submitted to A&A",
-    "published": "2026-08-22",
-    "updated": "2026-08-22",
-    "abs_url": "https://arxiv.org/abs/2608.21876",
-    "pdf_url": "https://arxiv.org/pdf/2608.21876",
-    "abstract_ja": "",
-    "title_ja": "SDSS J141945.50+524648.0の塵のトーラス内における $2175\\,\\mathring{\\mathrm{A}}$ の「絶滅バンプ」を示す間接的な証拠"
-  },
-  {
-    "id": "2608.23618",
-    "version": "v1",
-    "title": "Constraining the Inner Dark-Matter Slope of Sculptor: A Comparative Analysis of Dynamical Methods",
-    "abstract": "The core-cusp problem is a discrepancy between simulations and observations of the slopes of inner dark matter density profiles. The two-population estimator, separating dwarf spheroidals into metallicity-split subcomponents, is a standard method to break the mass-anisotropy degeneracy. Four dynamical methods are applied to the 1339-star Tolstoy et al. (2023) VLT/FLAMES Sculptor catalog: spherical Jeans, GravSphere, the Walker and Penarrubia (2011) two-population estimator, and a continuous $f(J,[\\mathrm{Fe/H}])$ action-based distribution function. This work finds $Γ=2.49^{+0.23}_{-0.20}$, with 99.6% of the posterior lying above $Γ=2$ (84.4% after $λ$ calibration), robust to membership cuts and metal-poor contamination; GravSphere gives $γ=0.46^{+0.40}_{-0.28}$. Controlled mocks that hold tracer geometry fixed while breaking the metallicity-kinematics link attribute 77-83% of the recovered bias to geometry rather than decomposition itself; thus, mock-based claims about population splitting must control for geometry. The continuous distribution function encodes a metallicity-action coupling $k_J$ inaccessible to any split-based method; a direct action-space computation on 575 stars with Gaia proper motions finds [Fe/H] declining by 0.3 dex across three decades in radial action. On the central-density diagnostic of Read et al. (2019), the same posteriors give $ρ_{DM}(150 \\mathrm{pc})=1.77 \\times 10^8 M_\\odot \\mathrm{kpc}^{-3}$, agreeing with their independent Sculptor measurement at $0.74σ$ and placing Sculptor in their cusp-like class; the shallow $γ$ of this work is an asymptotic quantity, and the local slope at 150 pc is consistent with the Navarro-Frenk-White profile. Any tension with feedback-driven core formation therefore rests on the slope axis alone.",
-    "authors": [
-      "Rishi Sanjeev"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [],
-    "comment": "30 pages, 22 figures. Code and MCMC chains: https://doi.org/10.5281/zenodo.22052154",
-    "published": "2026-08-22",
-    "updated": "2026-08-22",
-    "abs_url": "https://arxiv.org/abs/2608.23618",
-    "pdf_url": "https://arxiv.org/pdf/2608.23618",
-    "abstract_ja": "",
-    "title_ja": "彫刻家座の内部ダークマター勾配の制約：力学的手法の比較分析"
   }
 ]
