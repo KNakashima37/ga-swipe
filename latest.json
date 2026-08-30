@@ -2290,46 +2290,5 @@
     "pdf_url": "https://arxiv.org/pdf/2608.22726",
     "abstract_ja": "",
     "title_ja": "衛星の軌道方位から得られる、宇宙フィラメントの運動学的記憶に関する観測的証拠"
-  },
-  {
-    "id": "2608.22505",
-    "version": "v1",
-    "title": "The Mass-Size Plane Does Not Resolve the Identifiability Limit of the Radial Acceleration Relation",
-    "abstract": "We present a computational audit of the identifiability limits for structural corrections to the Radial Acceleration Relation (RAR) using a canonical subset of the SPARC database (N = 126). Rather than proposing a new dynamical law, we establish the observational conditions under which such a law would be mathematically recoverable. We resolve three methodological controls that heavily influence RAR interpretations. First, we isolate a -0.39 dex residual offset between the eight galaxies in the lowest-quality observational tier (Q = 3, mean -0.433 dex) and the remaining 118 (mean -0.040 dex). Of five predictions that beam smearing must satisfy, four fail: the radial profile plateaus at -0.331 +/- 0.028 dex rather than decaying to zero, and the offset does not scale with the number of resolution elements across a curve. Beam smearing is disfavoured as the primary driver, though the offset remains a data-quality signature rather than a physical one -- Q = 3 in SPARC flags major asymmetries and strong non-circular motions, conditions under which a rotation curve does not trace the equilibrium potential. Second, we decouple the architectural limits of the dataset into three independently measured quantities -- the no-model point scatter (sigma_M0 = 0.1860 dex), the residual floor after free per-galaxy intercepts (sigma_M3 = 0.1058 dex), and the propagated analytic error floor -- together with the absorbable budget sqrt(sigma_M0^2 - sigma_M3^2) = 0.1530 dex derived from the first two. Finally, we provide an 8-cell protocol grid to reconcile Leave-One-Out (LOO) Mean Squared Prediction Error (MSPE) ratios. We demonstrate that reported structural-dynamical couplings must be evaluated with strict adherence to residual definitions (median vs. mean, signed vs. absolute) and baseline denominators to avoid adopting labeling artifacts as new physics.",
-    "authors": [
-      "Lukas A. Sosna"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [],
-    "comment": "9 pages, 4 figures. Companion paper to arXiv:2608.08945. Canonical dataset (N = 126), analysis code, and QA/QC pipeline available at https://doi.org/10.5281/zenodo.21959872",
-    "published": "2026-08-23",
-    "updated": "2026-08-23",
-    "abs_url": "https://arxiv.org/abs/2608.22505",
-    "pdf_url": "https://arxiv.org/pdf/2608.22505",
-    "abstract_ja": "",
-    "title_ja": "質量・サイズ平面は、半径方向加速度関係の同定限界を解決しない"
-  },
-  {
-    "id": "2608.22231",
-    "version": "v1",
-    "title": "The Cosmic Ultraviolet Background at the Galactic Poles",
-    "abstract": "We have used archival GALEX data to separate the cosmic ultraviolet background at the Galactic Poles into two components: the dust scattered light and an offset. We have modeled the dust-scattered light using a single- scattering model finding 1 sigma limits of 0.54 -- 0.71 for the albedo (a) and 0.74 -- 0.83 for the phase function asymmetry factor (g) at 1530 Å and 0.66 -- 0.73 for a and 0.71 -- 0.77 for g at 2360 Å, that is, the grains are moderately reflective and highly forward-scattering. The offsets are 277 -- 284 photon units at 1530 Å and 513 -- 520 photon units at 2360 Å. We have estimated other Galactic and extragalactic contributors to the offset finding that 161 +- 18 photon units is unaccounted for at 1530 Å and 335 +- 38 at 2360 Å. The offsets are constant over these regions with variances of 20 -- 30 photon units.",
-    "authors": [
-      "Jayant Murthy",
-      "James Overduin",
-      "Raj Manas",
-      "Amit Pathak",
-      "Snehanshu Saha",
-      "Richard C. Henry"
-    ],
-    "primary": "astro-ph.GA",
-    "cross": [],
-    "comment": "12 pages, 5 figures, 5 tables, submitted to JAA",
-    "published": "2026-08-23",
-    "updated": "2026-08-23",
-    "abs_url": "https://arxiv.org/abs/2608.22231",
-    "pdf_url": "https://arxiv.org/pdf/2608.22231",
-    "abstract_ja": "",
-    "title_ja": "銀河の極における宇宙紫外線背景"
   }
 ]
